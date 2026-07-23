@@ -32,6 +32,8 @@ export type GirlCharacter = {
   handle: string;
   personality: string;
   bio: string;
+  unlockPrice: number;
+  unlockRequirement: string;
   palette: {
     main: string;
     soft: string;
@@ -59,6 +61,9 @@ export type GirlProgress = {
   chatSceneIndex: number;
   mood: number;
   totalSpent: number;
+  talkStreak: number;
+  breakUntil: number;
+  breakDurationMs: number;
   unlockedRewardIds: string[];
   leaderboard: LeaderboardEntry[];
 };
@@ -68,6 +73,7 @@ export type PlayerState = {
   ageConfirmed: boolean;
   credits: number;
   money: number;
+  unlockedGirlIds: GirlId[];
   inventory: InventoryToken[];
   girls: Record<GirlId, GirlProgress>;
 };

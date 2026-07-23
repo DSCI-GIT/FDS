@@ -42,6 +42,10 @@ test("server-renders the playable chat game shell", async () => {
   assert.match(html, /root\.addEventListener\("click"/);
   assert.match(html, /data-choice/);
   assert.match(html, /data-tribute/);
+  assert.match(html, /data-unlock/);
+  assert.match(html, /check-ready/);
+  assert.match(html, /Break mode/);
+  assert.match(html, /Attention/);
   assert.match(html, /gift-reveal/);
   assert.match(html, /She chooses what to buy/);
   assert.match(html, /Inventory/);
@@ -64,6 +68,10 @@ test("keeps v1 local, fictional, and payment-free", async () => {
 
   assert.match(data, /choices:\s*\[/);
   assert.match(data, /TRIBUTE_AMOUNTS/);
+  assert.match(data, /unlockPrice/);
+  assert.match(data, /breakUntil/);
+  assert.match(page, /interruptPenalty/);
+  assert.match(page, /maxTalkStreak/);
   const dialogueSectionCount = (data.match(/id:\s*"(kiyo|mimi|runa)-/g) ?? []).length;
   assert.ok(dialogueSectionCount >= 16);
   assert.match(storage, /window\.localStorage/);

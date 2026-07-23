@@ -177,6 +177,8 @@ export const girls: GirlCharacter[] = [
     handle: "softboss",
     personality: "Sweet-faced, bossy, and impossible to impress by accident.",
     bio: "A pink-room princess who treats praise like rent and keeps receipts on every tribute.",
+    unlockPrice: 0,
+    unlockRequirement: "Available from the start.",
     palette: {
       main: "#f47aae",
       soft: "#ffe0ef",
@@ -304,6 +306,8 @@ export const girls: GirlCharacter[] = [
     handle: "laceledger",
     personality: "Playful, elegant, and laser-focused on who pays attention.",
     bio: "A lace-and-lipgloss strategist who rewards devotion with tiny, deliberate upgrades.",
+    unlockPrice: 250,
+    unlockRequirement: "Unlock Mimi with 250 in-game money after you learn the first loop.",
     palette: {
       main: "#d978c5",
       soft: "#f7ddff",
@@ -431,6 +435,8 @@ export const girls: GirlCharacter[] = [
     handle: "glitchglam",
     personality: "Sleepy, smug, and secretly delighted when you keep up.",
     bio: "A cute gamer princess with a plush chair, a sharp tongue, and a wishlist that updates fast.",
+    unlockPrice: 500,
+    unlockRequirement: "Unlock Runa with 500 in-game money once you can afford rarer attention.",
     palette: {
       main: "#ff86a8",
       soft: "#ffe5f1",
@@ -578,12 +584,16 @@ export function createDefaultState(): PlayerState {
     ageConfirmed: false,
     credits: 20,
     money: 150,
+    unlockedGirlIds: ["kiyo"],
     inventory: [],
     girls: girls.reduce((accumulator, girl) => {
       accumulator[girl.id] = {
         chatSceneIndex: 0,
         mood: 50,
         totalSpent: 0,
+        talkStreak: 0,
+        breakUntil: 0,
+        breakDurationMs: 45000,
         unlockedRewardIds: [],
         leaderboard: rivalLeaderboards[girl.id],
       };
