@@ -41,8 +41,9 @@ test("server-renders the playable chat game shell", async () => {
   assert.match(html, /window\.__PINK_LEDGER_DATA__/);
   assert.match(html, /root\.addEventListener\("click"/);
   assert.match(html, /data-choice/);
-  assert.match(html, /data-reward/);
-  assert.match(html, /Tribute Shop/);
+  assert.match(html, /data-tribute/);
+  assert.match(html, /gift-reveal/);
+  assert.match(html, /She chooses what to buy/);
   assert.match(html, /Inventory/);
   assert.match(html, /<style>/i);
   assert.match(html, /\.room\{/);
@@ -62,6 +63,9 @@ test("keeps v1 local, fictional, and payment-free", async () => {
   ]);
 
   assert.match(data, /choices:\s*\[/);
+  assert.match(data, /TRIBUTE_AMOUNTS/);
+  const dialogueSectionCount = (data.match(/id:\s*"(kiyo|mimi|runa)-/g) ?? []).length;
+  assert.ok(dialogueSectionCount >= 16);
   assert.match(storage, /window\.localStorage/);
   assert.match(payments, /enabled:\s*false/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);

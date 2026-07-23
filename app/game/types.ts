@@ -12,6 +12,7 @@ export type DialogueChoice = {
 
 export type ChatScene = {
   id: string;
+  threadTitle?: string;
   prompt: string;
   choices: [DialogueChoice, DialogueChoice, DialogueChoice, DialogueChoice];
 };

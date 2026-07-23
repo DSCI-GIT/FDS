@@ -1,8 +1,9 @@
-import { EXCHANGE_RATE, createDefaultState, girls } from "./game/data";
+import { EXCHANGE_RATE, TRIBUTE_AMOUNTS, createDefaultState, girls } from "./game/data";
 
 const gameData = JSON.stringify({
   girls,
   exchangeRate: EXCHANGE_RATE,
+  tributeAmounts: TRIBUTE_AMOUNTS,
   defaultState: createDefaultState(),
 }).replace(/</g, "\\u003c");
 
@@ -46,7 +47,7 @@ const styles = `
 .bubble{position:absolute;left:5%;right:5%;bottom:22px;display:grid;grid-template-columns:132px 1fr;min-height:118px;border:12px solid #ffe8f4;border-radius:999px 24px 24px 999px;background:rgba(255,211,231,.95);box-shadow:0 12px 0 rgba(130,64,99,.11),0 18px 38px rgba(88,45,68,.16)}.speaker{display:grid;place-items:center;border-radius:999px;background:var(--main);color:#fff;font-size:1.45rem;font-weight:950}.bubble-copy{align-self:center;padding:14px 24px}.you-said{display:block;margin-bottom:6px;color:rgba(73,34,56,.68);font-size:.84rem;font-weight:900}.bubble p{margin:0;color:var(--ink);font-size:clamp(1rem,1.6vw,1.32rem);font-style:italic;font-weight:900;line-height:1.25}
 .chat-panel,.panel{padding:12px}.meta{display:flex;justify-content:space-between;gap:12px}.meta h1,.panel h2,.reward h3{margin:0;color:var(--ink)}.meta p,.reward p,.empty{margin:4px 0 0;color:rgba(58,32,47,.74);line-height:1.35}.mood{min-width:150px}.mood span{display:block;margin-bottom:5px;color:var(--ink);font-size:.8rem;font-weight:900}.mood div{height:12px;overflow:hidden;border-radius:999px;background:#ffe4f0}.mood i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--main),#ffd166)}
 .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.choice,.continue{min-height:58px;padding:12px 14px;border:2px solid rgba(244,122,174,.32);border-radius:8px;background:linear-gradient(180deg,#fff,#fff0f7);color:var(--ink);box-shadow:0 5px 0 rgba(174,93,132,.12);font-weight:900;text-align:left;line-height:1.25}.continue{width:100%;margin-top:12px;text-align:center;background:var(--main);color:#fff}
-.feedback{margin:12px 0 0;color:var(--ink);font-weight:900}.reward-list,.token-list,.leaderboard{display:grid;gap:10px;margin-top:12px}.reward{display:grid;gap:10px;padding:12px;border:1px solid rgba(128,61,99,.14);border-radius:8px;background:#fffafd}.reward button{padding:10px;border:0;border-radius:8px;background:var(--main);color:#fff;font-weight:900}.token{padding:8px 10px;border-radius:999px;background:#fff;color:var(--ink);font-size:.82rem;font-weight:900}.leaderboard{padding:0;list-style:none}.leaderboard li{display:flex;justify-content:space-between;padding:9px 10px;border-radius:8px;background:#fff}.reset{position:fixed;right:18px;bottom:18px;padding:10px 12px;border:0;border-radius:8px;background:#5b3a4a;color:#fff;font-weight:900}
+.feedback{margin:12px 0 0;color:var(--ink);font-weight:900}.tribute-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.tribute-button{min-height:50px;padding:10px;border:0;border-radius:8px;background:var(--main);color:#fff;font-weight:950;box-shadow:0 5px 0 rgba(94,39,68,.18)}.reward-list,.token-list,.leaderboard{display:grid;gap:10px;margin-top:12px}.reward{display:grid;gap:4px;padding:10px;border:1px solid rgba(128,61,99,.14);border-radius:8px;background:#fffafd}.reward.owned{background:linear-gradient(135deg,#fff,var(--soft))}.reward small{color:rgba(58,32,47,.66);font-weight:900;text-transform:uppercase}.token{padding:8px 10px;border-radius:999px;background:#fff;color:var(--ink);font-size:.82rem;font-weight:900}.leaderboard{padding:0;list-style:none}.leaderboard li{display:flex;justify-content:space-between;padding:9px 10px;border-radius:8px;background:#fff}.gift-reveal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:18px;background:rgba(70,31,52,.38);backdrop-filter:blur(6px)}.gift-card{display:grid;gap:12px;width:min(460px,100%);padding:22px;border:4px solid #ffe8f4;border-radius:8px;background:#fffafd;box-shadow:0 24px 70px rgba(99,47,75,.32);text-align:center}.gift-card h2{margin:0;color:var(--ink);font-size:1.8rem}.gift-card p{margin:0;color:rgba(58,32,47,.76);line-height:1.35}.gift-icon{display:grid;place-items:center;justify-self:center;width:120px;height:120px;border:6px solid #ffe8f4;border-radius:999px;background:linear-gradient(135deg,var(--main),var(--soft));color:#fff;font-size:3rem;font-weight:950}.gift-card button{min-height:50px;border:0;border-radius:8px;background:var(--main);color:#fff;font-weight:950}.reset{position:fixed;right:18px;bottom:18px;padding:10px 12px;border:0;border-radius:8px;background:#5b3a4a;color:#fff;font-weight:900}
 @media(max-width:1000px){.game-grid{grid-template-columns:1fr}.roster{grid-template-columns:repeat(3,1fr)}.side-stack{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.topbar,.game-grid,.side-stack,.roster{grid-template-columns:1fr}.room{min-height:520px}.avatar{right:-10px;bottom:150px;transform:scale(.82);transform-origin:bottom right}.bubble{left:10px;right:10px;grid-template-columns:1fr;border-radius:8px}.speaker{min-height:54px;border-radius:8px 8px 0 0}.choices{grid-template-columns:1fr}.login-card{left:16px;right:16px;width:auto}}
 `;
 
@@ -59,6 +60,7 @@ const script = `
   var lastReply = "";
   var lastPlayerLine = "";
   var feedback = "Pick a reply. Liked answers pay credits.";
+  var giftReveal = null;
 
   function clone(value){ return JSON.parse(JSON.stringify(value)); }
   function loadState(){
@@ -98,27 +100,36 @@ const script = `
     return '<div class="avatar"><div class="hair"></div><div class="head"><span class="eye left"></span><span class="eye right"></span><span class="mouth"></span></div><div class="neck"></div><div class="body">'+(hasReward?'<span class="reward-layer"></span>':'')+'</div><div class="arm"></div>'+(hasReward?'<span class="bow"></span>':'')+'</div>';
   }
 
+  function chooseGiftForTribute(g, p, amount) {
+    var lockedAffordable = g.rewards
+      .filter(function(reward){ return p.unlockedRewardIds.indexOf(reward.id) < 0 && reward.price <= amount; })
+      .sort(function(a, b){ return b.price - a.price; });
+    if (lockedAffordable.length) return lockedAffordable[0];
+    return g.rewards.find(function(reward){ return p.unlockedRewardIds.indexOf(reward.id) < 0; }) || null;
+  }
+
   function renderGame(){
     var g = girl();
     var p = progress();
     var unlocked = p.unlockedRewardIds || [];
     var scene = g.chatScenes[p.chatSceneIndex % g.chatScenes.length];
     var canExchange = state.credits >= data.exchangeRate.credits;
-    var canAfford = g.rewards.some(function(reward){ return unlocked.indexOf(reward.id) < 0 && state.money >= reward.price; });
+    var canTribute = data.tributeAmounts.some(function(amount){ return state.money >= amount; });
     root.style.setProperty("--main", g.palette.main);
     root.style.setProperty("--soft", g.palette.soft);
     root.style.setProperty("--ink", g.palette.ink);
     root.innerHTML =
       '<section class="topbar"><div><span class="sticker-mark">Pink Ledger</span> <span class="pill">fictional credits only</span></div><div class="wallet"><span>Player: '+escapeHtml(state.playerName)+'</span><span>Credits: '+state.credits+'</span><span>'+moneyLabel()+'</span><button class="primary-button" data-action="exchange" '+(!canExchange?'disabled':'')+'>Exchange</button></div></section>' +
-      '<section class="play-guide"><strong>Playable loop</strong><span class="'+(!lastReply?'hot':'')+'">1. Choose a reply</span><span class="'+(canExchange?'hot':'')+'">2. Exchange credits</span><span class="'+(canAfford?'hot':'')+'">3. Send tribute</span><span>4. Unlock look + token</span></section>' +
+      '<section class="play-guide"><strong>'+escapeHtml(scene.threadTitle || "Ongoing chat")+'</strong><span class="'+(!lastReply?'hot':'')+'">1. Choose a reply</span><span class="'+(canExchange?'hot':'')+'">2. Exchange credits</span><span class="'+(canTribute?'hot':'')+'">3. Send tribute</span><span>4. She chooses a gift</span></section>' +
       '<section class="game-grid"><aside class="roster">'+data.girls.map(function(item){ var gp = state.girls[item.id]; return '<button class="girl-tab '+(item.id===selectedGirlId?'active':'')+'" data-girl="'+item.id+'"><b>'+escapeHtml(item.name)+'</b><span>@'+escapeHtml(item.handle)+'</span><span>Spent '+gp.totalSpent+'</span></button>'; }).join("")+'</aside>' +
       '<section class="stage"><div class="room"><div class="bed"></div><div class="desk"><div class="screen"></div></div>'+avatarHtml(unlocked)+'<div class="bubble"><div class="speaker">'+escapeHtml(g.name)+'</div><div class="bubble-copy">'+(lastPlayerLine?'<span class="you-said">You: '+escapeHtml(lastPlayerLine)+'</span>':'')+'<p>'+escapeHtml(lastReply || scene.prompt)+'</p></div></div></div>' +
       '<div class="chat-panel"><div class="meta"><div><h1>'+escapeHtml(g.name)+'</h1><p>'+escapeHtml(g.personality)+'</p></div><div class="mood"><span>Mood</span><div><i style="width:'+p.mood+'%"></i></div></div></div>' +
       (lastReply ? '<button class="continue" data-action="continue">Continue chat</button>' : '<div class="choices">'+scene.choices.map(function(choice, index){ return '<button class="choice" data-choice="'+index+'">'+escapeHtml(choice.text)+'</button>'; }).join("")+'</div>') +
       '<p class="feedback">'+escapeHtml(feedback)+'</p></div></section>' +
-      '<aside class="side-stack"><section class="panel"><h2>Tribute Shop</h2><p>'+escapeHtml(g.bio)+'</p><div class="reward-list">'+g.rewards.map(function(reward){ var owned = unlocked.indexOf(reward.id) >= 0; var disabled = owned || state.money < reward.price; return '<article class="reward"><div><h3>'+escapeHtml(reward.name)+'</h3><p>'+escapeHtml(reward.description)+'</p></div><button data-reward="'+reward.id+'" '+(disabled?'disabled':'')+'>'+(owned?'Owned':state.money<reward.price?'Need '+(reward.price-state.money):'Tribute '+reward.price)+'</button></article>'; }).join("")+'</div></section>' +
+      '<aside class="side-stack"><section class="panel"><h2>Tribute</h2><p>'+escapeHtml(g.bio)+' She chooses what to buy after you send money.</p><div class="tribute-grid">'+data.tributeAmounts.map(function(amount){ return '<button class="tribute-button" data-tribute="'+amount+'" '+(state.money < amount ? 'disabled' : '')+'>Send '+amount+'</button>'; }).join("")+'</div><div class="reward-list">'+g.rewards.map(function(reward){ var owned = unlocked.indexOf(reward.id) >= 0; return '<article class="reward '+(owned?'owned':'')+'"><h3>'+escapeHtml(reward.name)+'</h3><small>'+(owned?'Unlocked':'She may choose this at '+reward.price+'+')+'</small><p>'+escapeHtml(reward.description)+'</p></article>'; }).join("")+'</div></section>' +
       '<section class="panel"><h2>Inventory</h2><div class="token-list">'+(state.inventory.length ? state.inventory.slice(0,6).map(function(token){ return '<span class="token">'+escapeHtml(token.name)+'</span>'; }).join("") : '<p class="empty">Tokens appear here after a tribute unlock.</p>')+'</div></section>' +
-      '<section class="panel"><h2>'+escapeHtml(g.name)+' Board</h2><ol class="leaderboard">'+leaderboardRows(g.id)+'</ol></section></aside></section><button class="reset" data-action="reset">Reset local save</button>';
+      '<section class="panel"><h2>'+escapeHtml(g.name)+' Board</h2><ol class="leaderboard">'+leaderboardRows(g.id)+'</ol></section></aside></section><button class="reset" data-action="reset">Reset local save</button>' +
+      (giftReveal ? '<section class="gift-reveal"><div class="gift-card"><div class="gift-icon">★</div><h2>'+escapeHtml(giftReveal.girlName)+' bought '+escapeHtml(giftReveal.rewardName)+'</h2><p>'+escapeHtml(giftReveal.description)+'</p><p><strong>Inventory token:</strong> '+escapeHtml(giftReveal.tokenName)+'</p><button data-action="close-reveal">Keep chatting</button></div></section>' : '');
   }
 
   function leaderboardRows(girlId){
@@ -143,17 +154,25 @@ const script = `
       feedback = choice.liked ? "Liked. +" + choice.creditReward + " credits." : "Disliked. No credits this time.";
       save(); renderGame(); return;
     }
-    if (target.dataset.reward) {
-      var g = girl(), p = progress(), reward = g.rewards.find(function(item){ return item.id === target.dataset.reward; });
-      if (!reward || p.unlockedRewardIds.indexOf(reward.id) >= 0 || state.money < reward.price) return;
-      state.money -= reward.price;
-      p.totalSpent += reward.price;
+    if (target.dataset.tribute) {
+      var amount = Number(target.dataset.tribute);
+      var g = girl(), p = progress();
+      if (!amount || state.money < amount) return;
+      var reward = chooseGiftForTribute(g, p, amount);
+      state.money -= amount;
+      p.totalSpent += amount;
       p.mood = Math.min(100, p.mood + 12);
-      p.unlockedRewardIds.push(reward.id);
-      state.inventory.unshift({ id: g.id + "-" + reward.id + "-" + Date.now(), girlId: g.id, rewardId: reward.id, name: reward.tokenName, kind: reward.kind, acquiredAt: new Date().toISOString() });
       p.leaderboard = (p.leaderboard || []).filter(function(row){ return row.playerName !== state.playerName; });
       p.leaderboard.push({ playerName: state.playerName, totalSpent: p.totalSpent });
-      feedback = g.name + " bought herself " + reward.name + ". Token added.";
+      if (reward) {
+        p.unlockedRewardIds.push(reward.id);
+        state.inventory.unshift({ id: g.id + "-" + reward.id + "-" + Date.now(), girlId: g.id, rewardId: reward.id, name: reward.tokenName, kind: reward.kind, acquiredAt: new Date().toISOString() });
+        giftReveal = { girlName: g.name, rewardName: reward.name, tokenName: reward.tokenName, description: reward.description };
+        feedback = g.name + " chose her own gift after your tribute.";
+      } else {
+        giftReveal = { girlName: g.name, rewardName: "a private wishlist upgrade", tokenName: "Devotion Receipt", description: "She already unlocked the visible gifts, so this tribute went into her private stash." };
+        feedback = g.name + " accepted the tribute and kept the choice private.";
+      }
       save(); renderGame(); return;
     }
     if (target.dataset.action === "exchange") {
@@ -162,6 +181,7 @@ const script = `
       return;
     }
     if (target.dataset.action === "continue") { lastReply = ""; lastPlayerLine = ""; feedback = "Your turn. Choose one reply."; renderGame(); return; }
+    if (target.dataset.action === "close-reveal") { giftReveal = null; renderGame(); return; }
     if (target.dataset.action === "reset") { localStorage.removeItem(key); state = clone(data.defaultState); selectedGirlId = "kiyo"; lastReply = ""; lastPlayerLine = ""; feedback = "Local save reset."; renderLogin(); }
   });
 

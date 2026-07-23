@@ -5,6 +5,171 @@ export const EXCHANGE_RATE = {
   money: 50,
 };
 
+export const TRIBUTE_AMOUNTS = [50, 100, 150, 250, 500];
+
+function scene(
+  id: string,
+  threadTitle: string,
+  prompt: string,
+  likedA: string,
+  likedB: string,
+  dislikedA: string,
+  dislikedB: string,
+) {
+  return {
+    id,
+    threadTitle,
+    prompt,
+    choices: [
+      {
+        id: `${id}-a`,
+        text: likedA,
+        liked: true,
+        creditReward: 12,
+        reply: "Good. You followed the thread and made yourself useful.",
+      },
+      {
+        id: `${id}-b`,
+        text: dislikedA,
+        liked: false,
+        creditReward: 0,
+        reply: "No. That answer wanders off like you forgot who has the spotlight.",
+      },
+      {
+        id: `${id}-c`,
+        text: likedB,
+        liked: true,
+        creditReward: 10,
+        reply: "Cute. Not perfect, but I can work with devotion that learns.",
+      },
+      {
+        id: `${id}-d`,
+        text: dislikedB,
+        liked: false,
+        creditReward: 0,
+        reply: "That was almost noise. Try listening before trying to be charming.",
+      },
+    ] as const,
+  };
+}
+
+const kiyoOngoingScenes = [
+  scene(
+    "kiyo-thread-01",
+    "Kiyo's vanity list",
+    "Kiyo sends a blurry photo of her desk. \"Look carefully. What part of my little kingdom needs upgrading first?\"",
+    "The vanity corner. It deserves something glossy.",
+    "The bow drawer. It should look as spoiled as you do.",
+    "The chair maybe? I cannot really tell.",
+    "Nothing. It already looks good enough.",
+  ),
+  scene(
+    "kiyo-thread-02",
+    "Kiyo's vanity list",
+    "\"I found three things I like. You get one chance to sound grateful I told you.\"",
+    "Thank you for letting me fund the prettiest option.",
+    "Pick the one that makes you smile when you see my name.",
+    "Are they expensive?",
+    "Do you really need another thing?",
+  ),
+  scene(
+    "kiyo-thread-03",
+    "Kiyo's vanity list",
+    "\"Imagine I unbox something cute. What should your job be while I do it?\"",
+    "Watching quietly and remembering who made it happen.",
+    "Complimenting the choice without trying to own it.",
+    "Asking if I get something too.",
+    "Telling you what I would have bought instead.",
+  ),
+  scene(
+    "kiyo-thread-04",
+    "Kiyo's vanity list",
+    "Kiyo taps her cheek. \"If I reward you with a photo, what do you say first?\"",
+    "That it suits you because you chose it.",
+    "That the receipt was worth being noticed.",
+    "Finally.",
+    "I would ask for another angle.",
+  ),
+];
+
+const mimiOngoingScenes = [
+  scene(
+    "mimi-thread-01",
+    "Mimi's receipt game",
+    "Mimi opens her notes app. \"I am ranking useful people today. What belongs beside your name?\"",
+    "Consistent, attentive, and easy to invoice.",
+    "Improving. Still below you, obviously.",
+    "Funny, charming, unpaid.",
+    "Whatever makes me look best.",
+  ),
+  scene(
+    "mimi-thread-02",
+    "Mimi's receipt game",
+    "\"A proper tribute should feel like punctuation. Which kind are you?\"",
+    "A period. Clear, finished, no excuses.",
+    "An exclamation mark when you want drama.",
+    "A question mark because I need to think.",
+    "A comma. Small but frequent.",
+  ),
+  scene(
+    "mimi-thread-03",
+    "Mimi's receipt game",
+    "Mimi smiles at her reflection. \"If I buy something with your money, who gets credit?\"",
+    "You do. I only get the honor of being useful.",
+    "Your taste gets credit. My wallet just behaved.",
+    "Me, because I paid.",
+    "Both of us equally.",
+  ),
+  scene(
+    "mimi-thread-04",
+    "Mimi's receipt game",
+    "\"My list has accessories, makeup, and outfits. What would a smart admirer notice?\"",
+    "That you choose the reward, not me.",
+    "That every item is another reason to keep earning.",
+    "The cheapest one.",
+    "The one I personally like best.",
+  ),
+];
+
+const runaOngoingScenes = [
+  scene(
+    "runa-thread-01",
+    "Runa's drop table",
+    "Runa opens a tiny wishlist window. \"Rare drop table updated. How do you improve your odds?\"",
+    "By sending tribute and letting you roll.",
+    "By earning credits until my timing is useful.",
+    "By asking for a discount.",
+    "By guessing what you want.",
+  ),
+  scene(
+    "runa-thread-02",
+    "Runa's drop table",
+    "\"If I pick a gift after you tribute, what is your reaction supposed to be?\"",
+    "Delighted. The choice is the reward.",
+    "Proud that my tribute became your upgrade.",
+    "Confused because I wanted to pick.",
+    "Annoyed if it is not my favorite.",
+  ),
+  scene(
+    "runa-thread-03",
+    "Runa's drop table",
+    "Runa yawns. \"My chat log says you like being useful. Confirm or deny?\"",
+    "Confirmed, especially when you notice.",
+    "Confirmed, and I can do better.",
+    "Deny. I am here to win.",
+    "Maybe, if there is a prize.",
+  ),
+  scene(
+    "runa-thread-04",
+    "Runa's drop table",
+    "\"Final check before I buy something cute. What should I remember about you?\"",
+    "That I learned the loop: earn, exchange, tribute.",
+    "That your upgrades matter more than my bragging.",
+    "That I deserve a big reward.",
+    "That I am still deciding if this is worth it.",
+  ),
+];
+
 export const girls: GirlCharacter[] = [
   {
     id: "kiyo",
@@ -20,6 +185,7 @@ export const girls: GirlCharacter[] = [
     chatScenes: [
       {
         id: "kiyo-hello",
+        threadTitle: "Kiyo's vanity list",
         prompt: "Kiyo tilts her head from her glittery desk chair. \"You came back. Cute. Tell me why I should answer.\"",
         choices: [
           {
@@ -54,6 +220,7 @@ export const girls: GirlCharacter[] = [
       },
       {
         id: "kiyo-wishlist",
+        threadTitle: "Kiyo's vanity list",
         prompt: "\"My vanity looks empty today. Tragic, right?\" Kiyo taps a nail on the screen.",
         choices: [
           {
@@ -86,13 +253,14 @@ export const girls: GirlCharacter[] = [
           },
         ],
       },
+      ...kiyoOngoingScenes,
     ],
     rewards: [
       {
         id: "kiyo-bow",
         kind: "accessory",
         name: "Ribbon Headband",
-        price: 120,
+        price: 50,
         tokenName: "Kiyo Ribbon Receipt",
         description: "A glossy bow for her sketch avatar and a token for your inventory.",
       },
@@ -100,7 +268,7 @@ export const girls: GirlCharacter[] = [
         id: "kiyo-gloss",
         kind: "makeup",
         name: "Sugar Gloss",
-        price: 180,
+        price: 100,
         tokenName: "Kiyo Gloss Stamp",
         description: "A soft lip tint that marks your tribute history.",
       },
@@ -108,9 +276,25 @@ export const girls: GirlCharacter[] = [
         id: "kiyo-dress",
         kind: "outfit",
         name: "Cloud Knit Set",
-        price: 260,
+        price: 150,
         tokenName: "Kiyo Outfit Card",
         description: "A cozy pink outfit layer for her portrait.",
+      },
+      {
+        id: "kiyo-lamp",
+        kind: "accessory",
+        name: "Heart Desk Lamp",
+        price: 250,
+        tokenName: "Kiyo Lamp Token",
+        description: "A soft room upgrade she picked from her vanity list.",
+      },
+      {
+        id: "kiyo-coat",
+        kind: "outfit",
+        name: "Ribbon Trim Coat",
+        price: 500,
+        tokenName: "Kiyo Coat Card",
+        description: "A bigger outfit reveal for serious tribute energy.",
       },
     ],
   },
@@ -128,6 +312,7 @@ export const girls: GirlCharacter[] = [
     chatScenes: [
       {
         id: "mimi-attention",
+        threadTitle: "Mimi's receipt game",
         prompt: "Mimi folds her arms. \"Quick. What detail changed since last time?\"",
         choices: [
           {
@@ -162,6 +347,7 @@ export const girls: GirlCharacter[] = [
       },
       {
         id: "mimi-ledger",
+        threadTitle: "Mimi's receipt game",
         prompt: "\"My leaderboard is looking competitive. Would you rather be remembered or ignored?\"",
         choices: [
           {
@@ -194,13 +380,14 @@ export const girls: GirlCharacter[] = [
           },
         ],
       },
+      ...mimiOngoingScenes,
     ],
     rewards: [
       {
         id: "mimi-choker",
         kind: "accessory",
         name: "Pearl Choker",
-        price: 140,
+        price: 50,
         tokenName: "Mimi Pearl Token",
         description: "A neat accessory layer with a prim little receipt.",
       },
@@ -208,7 +395,7 @@ export const girls: GirlCharacter[] = [
         id: "mimi-blush",
         kind: "makeup",
         name: "Petal Blush",
-        price: 190,
+        price: 100,
         tokenName: "Mimi Blush Compact",
         description: "A warm cheek tint for her vanity set.",
       },
@@ -216,9 +403,25 @@ export const girls: GirlCharacter[] = [
         id: "mimi-cardigan",
         kind: "outfit",
         name: "Lace Cardigan",
-        price: 280,
+        price: 150,
         tokenName: "Mimi Lace Card",
         description: "A soft outfit reward for steady tribute.",
+      },
+      {
+        id: "mimi-mirror",
+        kind: "accessory",
+        name: "Pearl Hand Mirror",
+        price: 250,
+        tokenName: "Mimi Mirror Token",
+        description: "A vanity prop she chose for checking every detail.",
+      },
+      {
+        id: "mimi-set",
+        kind: "outfit",
+        name: "Velvet Ribbon Set",
+        price: 500,
+        tokenName: "Mimi Velvet Card",
+        description: "A full look chosen from her private receipt game.",
       },
     ],
   },
@@ -236,6 +439,7 @@ export const girls: GirlCharacter[] = [
     chatScenes: [
       {
         id: "runa-login",
+        threadTitle: "Runa's drop table",
         prompt: "Runa looks up from her handheld. \"You interrupted my queue. Make it worth the pause.\"",
         choices: [
           {
@@ -270,6 +474,7 @@ export const girls: GirlCharacter[] = [
       },
       {
         id: "runa-drop",
+        threadTitle: "Runa's drop table",
         prompt: "\"Rare drop check. What should I buy myself when you stop hesitating?\"",
         choices: [
           {
@@ -302,13 +507,14 @@ export const girls: GirlCharacter[] = [
           },
         ],
       },
+      ...runaOngoingScenes,
     ],
     rewards: [
       {
         id: "runa-headset",
         kind: "accessory",
         name: "Kitten Headset",
-        price: 130,
+        price: 50,
         tokenName: "Runa Headset Token",
         description: "A cute gamer accessory for her avatar layer.",
       },
@@ -316,7 +522,7 @@ export const girls: GirlCharacter[] = [
         id: "runa-liner",
         kind: "makeup",
         name: "Spark Liner",
-        price: 200,
+        price: 100,
         tokenName: "Runa Liner Stamp",
         description: "A bright eye detail for her sketch face.",
       },
@@ -324,9 +530,25 @@ export const girls: GirlCharacter[] = [
         id: "runa-hoodie",
         kind: "outfit",
         name: "Prize Hoodie",
-        price: 300,
+        price: 150,
         tokenName: "Runa Hoodie Card",
         description: "A cozy outfit unlock for top-tier tribute.",
+      },
+      {
+        id: "runa-controller",
+        kind: "accessory",
+        name: "Pink Pro Controller",
+        price: 250,
+        tokenName: "Runa Controller Token",
+        description: "A desk prop she picked for her next queue.",
+      },
+      {
+        id: "runa-jacket",
+        kind: "outfit",
+        name: "Arcade Bomber Jacket",
+        price: 500,
+        tokenName: "Runa Jacket Card",
+        description: "A bigger outfit reveal from her rare drop table.",
       },
     ],
   },
