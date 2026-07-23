@@ -1,6 +1,7 @@
 export type GirlId = "kiyo" | "mimi" | "runa";
 
 export type RewardKind = "accessory" | "makeup" | "outfit";
+export type VisualChangeKind = RewardKind | "room" | "hair";
 
 export type DialogueChoice = {
   id: string;
@@ -24,6 +25,15 @@ export type RewardItem = {
   price: number;
   tokenName: string;
   description: string;
+  clue: string;
+};
+
+export type VisualChange = {
+  id: string;
+  kind: VisualChangeKind;
+  name: string;
+  description: string;
+  clue: string;
 };
 
 export type GirlCharacter = {
@@ -41,6 +51,7 @@ export type GirlCharacter = {
   };
   chatScenes: ChatScene[];
   rewards: RewardItem[];
+  visualChanges: VisualChange[];
 };
 
 export type InventoryToken = {
@@ -55,6 +66,25 @@ export type InventoryToken = {
 export type LeaderboardEntry = {
   playerName: string;
   totalSpent: number;
+  creditsEarned?: number;
+};
+
+export type PendingSpendEvent = {
+  id: string;
+  rewardId: string;
+  sourcePlayerName: string;
+  sourceIsRival: boolean;
+  amount: number;
+  changeIds: string[];
+  createdAt: number;
+};
+
+export type PendingDemandEvent = {
+  id: string;
+  amount: number;
+  tone: "attention" | "humiliation" | "obedience" | "praise";
+  message: string;
+  createdAt: number;
 };
 
 export type GirlProgress = {
@@ -64,6 +94,11 @@ export type GirlProgress = {
   talkStreak: number;
   breakUntil: number;
   breakDurationMs: number;
+  pendingTributes: number;
+  nextSpendAt: number;
+  pendingSpendEvent: PendingSpendEvent | null;
+  pendingDemand: PendingDemandEvent | null;
+  activeChangeIds: string[];
   unlockedRewardIds: string[];
   leaderboard: LeaderboardEntry[];
 };
@@ -71,8 +106,13 @@ export type GirlProgress = {
 export type PlayerState = {
   playerName: string;
   ageConfirmed: boolean;
+  avatarIcon: string;
   credits: number;
   money: number;
+  finSubStyle: string;
+  questionnaireComplete: boolean;
+  lastSavedAt: number;
+  lastDemandAt: number;
   unlockedGirlIds: GirlId[];
   inventory: InventoryToken[];
   girls: Record<GirlId, GirlProgress>;
