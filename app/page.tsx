@@ -2,7 +2,27 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { EXCHANGE_RATE, TRIBUTE_AMOUNTS, createDefaultState, girls } from "./game/data";
+import {
+  AVATARS,
+  BANNERS,
+  LEGACY_SAVE_KEYS,
+  SAVE_KEY,
+  applyInteraction,
+  evaluateInteraction,
+  getMoodLabel,
+  loadPlayerState,
+} from "./game/social";
+import {
+  WEBLLM_MODEL_ID,
+  initializeWebLLM,
+  interruptWebLLM,
+  streamCharacterReply,
+  supportsWebLLM,
+  type WebLLMStatus,
+} from "./game/webllm";
 import type {
+  ArtistRequest,
+  ChatMessage,
   DialogueChoice,
   GirlCharacter,
   GirlId,
@@ -11,21 +31,9 @@ import type {
   RewardItem,
 } from "./game/types";
 
-type Screen = "home" | "discover" | "messages" | "collection" | "studio" | "profile";
+type Screen = "home" | "discover" | "messages" | "collection" | "places" | "studio" | "profile";
 type ProfileTab = "posts" | "room" | "collection" | "supporters" | "about";
 type Notice = { id: string; title: string; body: string; girlId?: GirlId };
-type CommissionRequest = {
-  id: string;
-  character: string;
-  format: string;
-  mood: string;
-  palette: string;
-  brief: string;
-  status: "Draft" | "Submitted";
-};
-
-const STORAGE_KEY = "pink-ledger-social-v3";
-const LEGACY_KEYS = ["pink-ledger-v2-state", "pink-ledger-v1-state"];
 
 const characterArt: Record<GirlId, string> = {
   kiyo: "/art/kiyo-concept.webp",
@@ -84,7 +92,7 @@ const navItems: { id: Screen; label: string; icon: string }[] = [
   { id: "home", label: "Feed", icon: "⌂" },
   { id: "discover", label: "Discover", icon: "✦" },
   { id: "messages", label: "Messages", icon: "♡" },
-  { id: "collection", label: "Collection", icon: "▧" },
+  { id: "places", label: "Places", icon: "◇" },
   { id: "profile", label: "Profile", icon: "◌" },
 ];
 
@@ -95,40 +103,12 @@ const formatName: Record<string, string> = {
   outfit: "Outfit concept",
   scene: "Full scene",
   room: "Room item",
+  banner: "Profile banner",
+  frame: "Avatar frame",
 };
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function mergeState(saved: Partial<PlayerState> | null): PlayerState {
-  const base = createDefaultState();
-  if (!saved) return base;
-  const mergedGirls = clone(base.girls);
-  for (const girl of girls) {
-    mergedGirls[girl.id] = { ...mergedGirls[girl.id], ...(saved.girls?.[girl.id] ?? {}) };
-  }
-  const unlocked = new Set<GirlId>(["kiyo", "mimi", ...(saved.unlockedGirlIds ?? [])]);
-  return {
-    ...base,
-    ...saved,
-    unlockedGirlIds: Array.from(unlocked),
-    inventory: Array.isArray(saved.inventory) ? saved.inventory : [],
-    girls: mergedGirls,
-  };
-}
-
-function loadState(): PlayerState {
-  if (typeof window === "undefined") return createDefaultState();
-  for (const key of [STORAGE_KEY, ...LEGACY_KEYS]) {
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (raw) return mergeState(JSON.parse(raw) as Partial<PlayerState>);
-    } catch {
-      // Try the next compatible save.
-    }
-  }
-  return createDefaultState();
 }
 
 function girlById(id: GirlId): GirlCharacter {
@@ -218,14 +198,13 @@ export default function Home() {
   const [screen, setScreen] = useState<Screen>("home");
   const [selectedGirlId, setSelectedGirlId] = useState<GirlId>("kiyo");
   const [profileTab, setProfileTab] = useState<ProfileTab>("posts");
-  const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [lastPlayerLine, setLastPlayerLine] = useState("");
   const [lastReply, setLastReply] = useState("");
   const [feedback, setFeedback] = useState("Choose a reply. Attentive answers earn credits.");
   const [notice, setNotice] = useState<Notice | null>(null);
   const [confirm, setConfirm] = useState<{ type: "tribute" | "access"; amount: number } | null>(null);
   const [studioStep, setStudioStep] = useState(1);
-  const [commission, setCommission] = useState<CommissionRequest>({
+  const [commission, setCommission] = useState<ArtistRequest>({
     id: "",
     character: "Kiyo",
     format: "portrait",
@@ -233,29 +212,50 @@ export default function Home() {
     palette: "Blush & cream",
     brief: "",
     status: "Draft",
+    createdAt: 0,
   });
-  const [submittedCommissions, setSubmittedCommissions] = useState<CommissionRequest[]>([]);
+  const [profileStep, setProfileStep] = useState(1);
+  const [profileDraft, setProfileDraft] = useState({
+    displayName: "",
+    handle: "",
+    bio: "",
+    tagline: "",
+    avatarId: "plum-moon",
+    bannerId: "blush-clouds",
+    accent: "#c35f85",
+  });
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [discoverQuery, setDiscoverQuery] = useState("");
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [aiStatus, setAiStatus] = useState<WebLLMStatus>("idle");
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiProgressText, setAiProgressText] = useState("");
+  const [aiDraft, setAiDraft] = useState("");
+  const [streamingReply, setStreamingReply] = useState("");
 
   const selectedGirl = girlById(selectedGirlId);
   const selectedProgress = state.girls[selectedGirlId];
   const unlocked = state.unlockedGirlIds.includes(selectedGirlId);
+  const unreadCount = state.notifications.filter((item) => !item.read).length;
 
   useEffect(() => {
-    setState(loadState());
-    try {
-      setLikedPosts(JSON.parse(window.localStorage.getItem("pink-ledger-liked-posts") ?? "[]") as string[]);
-      setSubmittedCommissions(
-        JSON.parse(window.localStorage.getItem("pink-ledger-commissions") ?? "[]") as CommissionRequest[],
-      );
-    } catch {
-      // Optional UI preferences may safely reset.
-    }
+    const loaded = loadPlayerState();
+    setState(loaded);
+    setProfileDraft({
+      displayName: loaded.playerName,
+      handle: loaded.profile.handle,
+      bio: loaded.profile.bio,
+      tagline: loaded.profile.tagline,
+      avatarId: loaded.profile.avatarId,
+      bannerId: loaded.profile.bannerId,
+      accent: loaded.profile.accent,
+    });
     setReady(true);
   }, []);
 
   useEffect(() => {
     if (!ready) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, lastSavedAt: Date.now() }));
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ ...state, lastSavedAt: Date.now() }));
   }, [state, ready]);
 
   useEffect(() => {
@@ -286,6 +286,15 @@ export default function Home() {
             progress.pendingTributes = 0;
             progress.nextSpendAt = 0;
             if (!progress.activeChangeIds.includes(reward.id)) progress.activeChangeIds.push(reward.id);
+            next.notifications.unshift({
+              id: `room-${girl.id}-${Date.now()}`,
+              title: `${girl.name} changed her room`,
+              body: "A tribute purchase appeared. Look closely before you guess.",
+              createdAt: Date.now(),
+              read: false,
+              girlId: girl.id,
+              destination: "messages",
+            });
             changed = true;
             setNotice({
               id: `notice-${Date.now()}`,
@@ -302,11 +311,8 @@ export default function Home() {
   }, [ready]);
 
   const feedPosts = useMemo(
-    () =>
-      socialPosts.filter(
-        (post) => post.visibility === "public" || state.unlockedGirlIds.includes(post.girlId),
-      ),
-    [state.unlockedGirlIds],
+    () => socialPosts,
+    [],
   );
 
   function updateState(mutate: (draft: PlayerState) => void) {
@@ -353,16 +359,27 @@ export default function Home() {
 
   function chooseReply(choice: DialogueChoice) {
     const girl = selectedGirl;
+    const signal = evaluateInteraction(girl, selectedProgress, choice.text);
     updateState((draft) => {
       const progress = draft.girls[girl.id];
       draft.credits += choice.creditReward;
-      progress.mood = Math.max(0, Math.min(100, progress.mood + (choice.liked ? 8 : -6)));
-      progress.talkStreak += 1;
-      progress.chatSceneIndex = (progress.chatSceneIndex + 1) % girl.chatScenes.length;
+      const updated = applyInteraction(progress, {
+        ...signal,
+        moodDelta: choice.liked ? Math.max(6, signal.moodDelta) : Math.min(-5, signal.moodDelta),
+      });
+      draft.girls[girl.id] = {
+        ...updated,
+        talkStreak: progress.talkStreak + 1,
+        chatSceneIndex: (progress.chatSceneIndex + 1) % girl.chatScenes.length,
+      };
     });
     setLastPlayerLine(choice.text);
     setLastReply(choice.reply);
-    setFeedback(choice.liked ? `Liked · +${choice.creditReward} credits` : "She was not impressed this time.");
+    setFeedback(
+      choice.liked
+        ? `Liked · +${choice.creditReward} credits · ${signal.reason}`
+        : `She was not impressed · ${signal.reason}`,
+    );
   }
 
   function completeTribute(amount: number) {
@@ -377,6 +394,21 @@ export default function Home() {
       const playerRow = progress.leaderboard.find((row) => row.playerName === draft.playerName);
       if (playerRow) playerRow.totalSpent += amount;
       else progress.leaderboard.push({ playerName: draft.playerName, totalSpent: amount });
+      draft.activity.unshift({
+        id: `tribute-activity-${Date.now()}`,
+        label: `Supported ${selectedGirl.name}`,
+        detail: `${amount} fictional money entered her pending purse.`,
+        createdAt: Date.now(),
+      });
+      draft.notifications.unshift({
+        id: `tribute-notification-${Date.now()}`,
+        title: `${selectedGirl.name} received ${amount}`,
+        body: "Her room may change after she chooses a purchase.",
+        createdAt: Date.now(),
+        read: false,
+        girlId: selectedGirlId,
+        destination: "messages",
+      });
     });
     setConfirm(null);
     setNotice({
@@ -392,6 +424,21 @@ export default function Home() {
     updateState((draft) => {
       draft.money -= selectedGirl.unlockPrice;
       if (!draft.unlockedGirlIds.includes(selectedGirlId)) draft.unlockedGirlIds.push(selectedGirlId);
+      draft.activity.unshift({
+        id: `access-activity-${Date.now()}`,
+        label: `Opened ${selectedGirl.name}'s private circle`,
+        detail: "Private posts, room, collection and DMs became available.",
+        createdAt: Date.now(),
+      });
+      draft.notifications.unshift({
+        id: `access-notification-${Date.now()}`,
+        title: `${selectedGirl.name}'s private circle is open`,
+        body: "Private posts, room, collection and messages are now available.",
+        createdAt: Date.now(),
+        read: false,
+        girlId: selectedGirlId,
+        destination: "profile",
+      });
     });
     setConfirm(null);
     setNotice({
@@ -422,6 +469,21 @@ export default function Home() {
         draft.inventory.unshift(token);
         draft.credits += 20;
         progress.mood = Math.min(100, progress.mood + 15);
+        draft.activity.unshift({
+          id: `collection-activity-${Date.now()}`,
+          label: `Collected ${reward.name}`,
+          detail: `${selectedGirl.name}'s room detail was identified correctly.`,
+          createdAt: Date.now(),
+        });
+        draft.notifications.unshift({
+          id: `collection-notification-${Date.now()}`,
+          title: `${reward.name} added to your collection`,
+          body: "Correct observation earned an art card and 20 credits.",
+          createdAt: Date.now(),
+          read: false,
+          girlId: selectedGirlId,
+          destination: "collection",
+        });
       } else {
         progress.mood = Math.max(0, progress.mood - 5);
       }
@@ -437,24 +499,224 @@ export default function Home() {
   }
 
   function togglePostLike(postId: string) {
-    const next = likedPosts.includes(postId)
-      ? likedPosts.filter((id) => id !== postId)
-      : [...likedPosts, postId];
-    setLikedPosts(next);
-    window.localStorage.setItem("pink-ledger-liked-posts", JSON.stringify(next));
+    updateState((draft) => {
+      draft.likedPostIds = draft.likedPostIds.includes(postId)
+        ? draft.likedPostIds.filter((id) => id !== postId)
+        : [...draft.likedPostIds, postId];
+    });
+  }
+
+  function toggleBookmark(postId: string) {
+    updateState((draft) => {
+      draft.bookmarkedPostIds = draft.bookmarkedPostIds.includes(postId)
+        ? draft.bookmarkedPostIds.filter((id) => id !== postId)
+        : [...draft.bookmarkedPostIds, postId];
+    });
   }
 
   function submitCommission() {
-    const request: CommissionRequest = {
+    const request: ArtistRequest = {
       ...commission,
       id: `commission-${Date.now()}`,
       status: "Submitted",
+      createdAt: Date.now(),
     };
-    const next = [request, ...submittedCommissions];
-    setSubmittedCommissions(next);
-    window.localStorage.setItem("pink-ledger-commissions", JSON.stringify(next));
+    updateState((draft) => {
+      draft.artistRequests.unshift(request);
+      draft.activity.unshift({
+        id: `artist-activity-${Date.now()}`,
+        label: "Submitted an artist request",
+        detail: `${formatName[request.format] ?? request.format} request awaiting review.`,
+        createdAt: Date.now(),
+      });
+      draft.notifications.unshift({
+        id: `artist-notification-${Date.now()}`,
+        title: "Artist request submitted",
+        body: "No fee was charged. The request is awaiting artist review.",
+        createdAt: Date.now(),
+        read: false,
+        destination: "studio",
+      });
+    });
     setCommission({ ...commission, id: "", brief: "", status: "Draft" });
     setStudioStep(4);
+  }
+
+  function savePlayerProfile() {
+    const displayName = profileDraft.displayName.trim().slice(0, 24);
+    const handle = profileDraft.handle
+      .trim()
+      .toLowerCase()
+      .replace(/^@/, "")
+      .replace(/[^a-z0-9_]/g, "")
+      .slice(0, 18);
+    if (!displayName || handle.length < 3 || !profileDraft.bio.trim()) {
+      setNotice({
+        id: `profile-error-${Date.now()}`,
+        title: "Profile needs a little more",
+        body: "Add a display name, a handle of at least 3 characters, and a short bio.",
+      });
+      return;
+    }
+    updateState((draft) => {
+      draft.playerName = displayName;
+      draft.profile = {
+        ...draft.profile,
+        complete: true,
+        handle,
+        bio: profileDraft.bio.trim().slice(0, 160),
+        tagline: profileDraft.tagline.trim().slice(0, 60),
+        avatarId: profileDraft.avatarId,
+        bannerId: profileDraft.bannerId,
+        accent: profileDraft.accent,
+      };
+      draft.activity.unshift({
+        id: `profile-activity-${Date.now()}`,
+        label: editingProfile ? "Updated social profile" : "Joined Pink Ledger",
+        detail: `@${handle} chose a new profile identity.`,
+        createdAt: Date.now(),
+      });
+    });
+    setEditingProfile(false);
+    setProfileStep(1);
+    setNotice({
+      id: `profile-saved-${Date.now()}`,
+      title: editingProfile ? "Profile updated" : "Your profile is live",
+      body: `@${handle} is ready for the network.`,
+    });
+  }
+
+  function beginProfileEdit() {
+    setProfileDraft({
+      displayName: state.playerName,
+      handle: state.profile.handle,
+      bio: state.profile.bio,
+      tagline: state.profile.tagline,
+      avatarId: state.profile.avatarId,
+      bannerId: state.profile.bannerId,
+      accent: state.profile.accent,
+    });
+    setProfileStep(1);
+    setEditingProfile(true);
+  }
+
+  async function enableAIChat() {
+    if (!supportsWebLLM()) {
+      setAiStatus("unsupported");
+      updateState((draft) => {
+        draft.girls[selectedGirlId].chatMode = "scripted";
+        draft.aiChatAcknowledged = true;
+      });
+      return;
+    }
+    updateState((draft) => {
+      draft.aiChatAcknowledged = true;
+    });
+    setAiStatus("loading");
+    setAiProgress(0);
+    setAiProgressText("Preparing the private local model…");
+    try {
+      await initializeWebLLM((progress, text) => {
+        setAiProgress(progress);
+        setAiProgressText(text);
+      });
+      updateState((draft) => {
+        draft.girls[selectedGirlId].chatMode = "ai";
+      });
+      setAiStatus("ready");
+    } catch {
+      setAiStatus("error");
+      updateState((draft) => {
+        draft.girls[selectedGirlId].chatMode = "scripted";
+      });
+    }
+  }
+
+  function switchToScriptedChat() {
+    interruptWebLLM();
+    updateState((draft) => {
+      draft.girls[selectedGirlId].chatMode = "scripted";
+    });
+    setAiStatus("idle");
+    setStreamingReply("");
+  }
+
+  async function sendAIMessage() {
+    const content = aiDraft.trim().slice(0, 500);
+    if (!content || aiStatus !== "ready" || selectedProgress.breakUntil > Date.now()) return;
+    const signal = evaluateInteraction(selectedGirl, selectedProgress, content);
+    const playerMessage: ChatMessage = {
+      id: `player-${Date.now()}`,
+      role: "player",
+      content,
+      createdAt: Date.now(),
+      mode: "ai",
+    };
+    const updatedProgress = applyInteraction(selectedProgress, signal);
+    const promptMessages = [...selectedProgress.aiMessages, playerMessage].slice(-20);
+
+    updateState((draft) => {
+      draft.girls[selectedGirlId] = {
+        ...draft.girls[selectedGirlId],
+        ...updatedProgress,
+        aiMessages: promptMessages,
+      };
+    });
+    setAiDraft("");
+    setStreamingReply("");
+    setFeedback(signal.reason);
+    setAiStatus("generating");
+
+    try {
+      const response = await streamCharacterReply({
+        girl: selectedGirl,
+        progress: updatedProgress,
+        playerName: state.playerName,
+        messages: promptMessages,
+        onToken: setStreamingReply,
+      });
+      const girlMessage: ChatMessage = {
+        id: `girl-${Date.now()}`,
+        role: "girl",
+        content: response || "I lost that thought. Try me again.",
+        createdAt: Date.now(),
+        mode: "ai",
+      };
+      updateState((draft) => {
+        const progress = draft.girls[selectedGirlId];
+        progress.aiMessages = [...progress.aiMessages, girlMessage].slice(-20);
+        progress.conversationSummary = `${state.playerName} recently discussed ${signal.topic}. ${signal.reason}`.slice(0, 240);
+      });
+      setStreamingReply("");
+      setAiStatus("ready");
+    } catch {
+      setStreamingReply("");
+      setAiStatus("error");
+      setFeedback("The local model stopped. Scripted chat remains available.");
+    }
+  }
+
+  function resetAIConversation() {
+    if (!window.confirm(`Reset the local AI conversation with ${selectedGirl.name}?`)) return;
+    updateState((draft) => {
+      draft.girls[selectedGirlId].aiMessages = [];
+      draft.girls[selectedGirlId].conversationSummary = "";
+      draft.girls[selectedGirlId].recentTopics = [];
+      draft.girls[selectedGirlId].boredom = 18;
+    });
+    setStreamingReply("");
+    setFeedback("Local AI conversation reset.");
+  }
+
+  function openNotification(item: PlayerState["notifications"][number]) {
+    updateState((draft) => {
+      const notification = draft.notifications.find((candidate) => candidate.id === item.id);
+      if (notification) notification.read = true;
+    });
+    setNotificationsOpen(false);
+    if (item.girlId && item.destination === "messages") openMessages(item.girlId);
+    else if (item.girlId && item.destination === "profile") openProfile(item.girlId);
+    else if (item.destination) navigate(item.destination);
   }
 
   if (!ready) {
@@ -489,6 +751,11 @@ export default function Home() {
               draft.playerName = playerName;
               draft.ageConfirmed = true;
             });
+            setProfileDraft((current) => ({
+              ...current,
+              displayName: playerName,
+              handle: playerName.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 18),
+            }));
           }}
         >
           <span className="eyebrow">Private profile setup</span>
@@ -504,6 +771,104 @@ export default function Home() {
           </label>
           <button className="primary" type="submit">Create profile</button>
         </form>
+      </main>
+    );
+  }
+
+  if (!state.profile.complete || editingProfile) {
+    const chosenAvatar = AVATARS.find((avatar) => avatar.id === profileDraft.avatarId) ?? AVATARS[0];
+    return (
+      <main className="profile-setup-shell">
+        <section className="profile-setup-aside">
+          <span className="eyebrow">{editingProfile ? "Edit your identity" : "Welcome to the network"}</span>
+          <h1>Make it yours.</h1>
+          <p>Your profile is your place in Pink Ledger—visible in the feed, messages, collections and future locations.</p>
+          <div className={`profile-preview banner-${profileDraft.bannerId}`} style={{ "--profile-accent": profileDraft.accent } as React.CSSProperties}>
+            <div className="preview-banner" />
+            <span className="preview-avatar">{chosenAvatar.symbol}</span>
+            <div>
+              <b>{profileDraft.displayName || state.playerName || "Display name"}</b>
+              <small>@{profileDraft.handle || "your_handle"}</small>
+              <p>{profileDraft.bio || "Your short profile bio will appear here."}</p>
+            </div>
+          </div>
+        </section>
+        <section className="profile-setup-card">
+          <div className="setup-progress" aria-label="Profile setup progress">
+            {["Identity", "Avatar", "Style", "Review"].map((label, index) => (
+              <span className={profileStep >= index + 1 ? "active" : ""} key={label}>{index + 1}<i>{label}</i></span>
+            ))}
+          </div>
+          {profileStep === 1 && (
+            <div className="setup-step">
+              <span className="eyebrow">Step one</span>
+              <h2>Introduce yourself</h2>
+              <label><span>Display name</span><input type="text" value={profileDraft.displayName} maxLength={24} onChange={(event) => setProfileDraft({ ...profileDraft, displayName: event.target.value })} /></label>
+              <label><span>Handle</span><div className="handle-input"><i>@</i><input type="text" value={profileDraft.handle} maxLength={18} onChange={(event) => setProfileDraft({ ...profileDraft, handle: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })} /></div></label>
+              <label><span>Bio</span><textarea value={profileDraft.bio} maxLength={160} placeholder="A short introduction for your circle…" onChange={(event) => setProfileDraft({ ...profileDraft, bio: event.target.value })} /></label>
+              <label><span>Tagline <small>optional</small></span><input type="text" value={profileDraft.tagline} maxLength={60} placeholder="Collector, observer, night owl…" onChange={(event) => setProfileDraft({ ...profileDraft, tagline: event.target.value })} /></label>
+              <div className="form-actions">
+                {editingProfile && <button onClick={() => setEditingProfile(false)}>Cancel</button>}
+                <button className="primary" disabled={!profileDraft.displayName.trim() || profileDraft.handle.length < 3 || !profileDraft.bio.trim()} onClick={() => setProfileStep(2)}>Choose an avatar</button>
+              </div>
+            </div>
+          )}
+          {profileStep === 2 && (
+            <div className="setup-step">
+              <span className="eyebrow">Step two</span>
+              <h2>Choose your face in the network</h2>
+              <div className="avatar-choice-grid">
+                {AVATARS.map((avatar) => {
+                  const owned = state.profile.ownedAvatarIds.includes(avatar.id);
+                  const available = avatar.unlocked || owned;
+                  return (
+                    <button
+                      className={`${profileDraft.avatarId === avatar.id ? "active" : ""} ${available ? "" : "locked"}`}
+                      key={avatar.id}
+                      disabled={!available && (avatar.id !== "artist-avatar" || !editingProfile)}
+                      onClick={() => {
+                        if (avatar.id === "artist-avatar" && editingProfile) {
+                          setCommission({ ...commission, character: state.playerName, format: "avatar" });
+                          setEditingProfile(false);
+                          setScreen("studio");
+                        } else if (available) {
+                          setProfileDraft({ ...profileDraft, avatarId: avatar.id });
+                        }
+                      }}
+                    >
+                      <i>{avatar.symbol}</i><b>{avatar.label}</b><small>{avatar.id === "artist-avatar" && !editingProfile ? "Finish setup, then request in Studio" : avatar.requirement}</small>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="form-actions"><button onClick={() => setProfileStep(1)}>Back</button><button className="primary" onClick={() => setProfileStep(3)}>Choose your style</button></div>
+            </div>
+          )}
+          {profileStep === 3 && (
+            <div className="setup-step">
+              <span className="eyebrow">Step three</span>
+              <h2>Set the atmosphere</h2>
+              <div className="banner-choice-grid">
+                {BANNERS.map((banner) => {
+                  const owned = state.profile.ownedBannerIds.includes(banner.id);
+                  const available = banner.unlocked || owned;
+                  return <button className={`banner-${banner.id} ${profileDraft.bannerId === banner.id ? "active" : ""}`} disabled={!available} key={banner.id} onClick={() => setProfileDraft({ ...profileDraft, bannerId: banner.id })}><i></i><b>{banner.label}</b><small>{available ? "Available" : banner.id === "artist-banner" ? "Artist commission" : "Future unlock"}</small></button>;
+                })}
+              </div>
+              <label><span>Profile accent</span><input type="color" value={profileDraft.accent} onChange={(event) => setProfileDraft({ ...profileDraft, accent: event.target.value })} /></label>
+              <div className="form-actions"><button onClick={() => setProfileStep(2)}>Back</button><button className="primary" onClick={() => setProfileStep(4)}>Review profile</button></div>
+            </div>
+          )}
+          {profileStep === 4 && (
+            <div className="setup-step final-profile-step">
+              <span className="eyebrow">Step four</span>
+              <h2>Your profile is ready</h2>
+              <p>Likes, messages, collections and future outings will all connect to this identity. You can edit it later.</p>
+              <dl><div><dt>Name</dt><dd>{profileDraft.displayName}</dd></div><div><dt>Handle</dt><dd>@{profileDraft.handle}</dd></div><div><dt>Avatar</dt><dd>{chosenAvatar.label}</dd></div><div><dt>Banner</dt><dd>{BANNERS.find((banner) => banner.id === profileDraft.bannerId)?.label}</dd></div></dl>
+              <div className="form-actions"><button onClick={() => setProfileStep(3)}>Back</button><button className="primary" onClick={savePlayerProfile}>{editingProfile ? "Save changes" : "Enter the feed"}</button></div>
+            </div>
+          )}
+        </section>
       </main>
     );
   }
@@ -567,9 +932,11 @@ export default function Home() {
           </div>
           {feedPosts.map((post) => {
             const girl = girlById(post.girlId);
-            const liked = likedPosts.includes(post.id);
+            const liked = state.likedPostIds.includes(post.id);
+            const bookmarked = state.bookmarkedPostIds.includes(post.id);
+            const lockedPost = post.visibility === "private" && !state.unlockedGirlIds.includes(post.girlId);
             return (
-              <article className="social-post" key={post.id}>
+              <article className={`social-post ${lockedPost ? "locked-post" : ""}`} key={post.id}>
                 <header>
                   <button className="post-author" onClick={() => openProfile(girl.id)}>
                     <span className="mini-avatar"><Portrait girl={girl} alt="" /></span>
@@ -577,18 +944,20 @@ export default function Home() {
                   </button>
                   <span className={`visibility ${post.visibility}`}>{post.visibility}</span>
                 </header>
-                <button className="post-media" onClick={() => openProfile(girl.id, post.type === "room" ? "room" : "posts")}>
+                <button className="post-media" onClick={() => openProfile(girl.id, lockedPost ? "posts" : post.type === "room" ? "room" : "posts")}>
                   <img src={post.image} alt={`${girl.name}'s ${post.type} post`} />
                   {post.visibility === "private" && <span className="private-stamp">private circle</span>}
+                  {lockedPost && <span className="locked-post-copy"><b>Private post</b><small>Open {girl.name}&apos;s profile to see what her circle includes.</small></span>}
                 </button>
                 <div className="post-actions">
-                  <button className={liked ? "liked" : ""} onClick={() => togglePostLike(post.id)} aria-label="Like post">
+                  <button className={liked ? "liked" : ""} disabled={lockedPost} onClick={() => togglePostLike(post.id)} aria-label="Like post">
                     {liked ? "♥" : "♡"} {post.likes + (liked ? 1 : 0)}
                   </button>
                   <button onClick={() => openProfile(girl.id)}>◯ {post.comments}</button>
                   <button onClick={() => openMessages(girl.id)} disabled={!state.unlockedGirlIds.includes(girl.id)}>↗ Message</button>
+                  <button className={bookmarked ? "bookmarked" : ""} disabled={lockedPost} onClick={() => toggleBookmark(post.id)} aria-label="Bookmark post">{bookmarked ? "◆ Saved" : "◇ Save"}</button>
                 </div>
-                <p><b>{girl.name}</b> {post.caption}</p>
+                <p><b>{girl.name}</b> {lockedPost ? "A private-circle update is waiting behind this profile." : post.caption}</p>
               </article>
             );
           })}
@@ -616,13 +985,30 @@ export default function Home() {
     const isPrivateOpen = state.unlockedGirlIds.includes(selectedGirlId);
     const girlPosts = socialPosts.filter((post) => post.girlId === selectedGirlId);
     const progress = state.girls[selectedGirlId];
+    const query = discoverQuery.trim().toLowerCase();
+    const matches = girls.filter((girl) =>
+      [girl.name, girl.handle, girl.personality, ...girl.conversation.interests]
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
+    );
     const sortedBoard = [...progress.leaderboard, { playerName: state.playerName, totalSpent: progress.totalSpent }]
       .filter((row, index, rows) => rows.findIndex((item) => item.playerName === row.playerName) === index)
       .sort((a, b) => b.totalSpent - a.totalSpent);
     return (
-      <div className="profile-page" style={{ "--accent": selectedGirl.palette.main } as React.CSSProperties}>
+      <div className="discover-page">
+        <section className="profile-directory">
+          <div><span className="eyebrow">Discover the network</span><h1>Profiles</h1></div>
+          <label><span className="sr-only">Search profiles</span><input type="search" value={discoverQuery} placeholder="Search names, handles or interests…" onChange={(event) => setDiscoverQuery(event.target.value)} /></label>
+          <div className="directory-row">
+            <button onClick={() => navigate("profile")}><span className="directory-avatar player-directory-avatar">{AVATARS.find((avatar) => avatar.id === state.profile.avatarId)?.symbol}</span><b>{state.playerName}</b><small>@{state.profile.handle} · you</small></button>
+            {matches.map((girl) => <button className={girl.id === selectedGirlId ? "active" : ""} key={girl.id} onClick={() => { setSelectedGirlId(girl.id); setProfileTab("posts"); }}><span className="directory-avatar"><Portrait girl={girl} alt="" /></span><b>{girl.name}</b><small>@{girl.handle} · {profileStatus(girl, state)}</small></button>)}
+          </div>
+          {!matches.length && <p className="empty-state">No fictional profiles match that search.</p>}
+        </section>
+        <div className="profile-page" style={{ "--accent": selectedGirl.palette.main } as React.CSSProperties}>
         <section className="profile-hero">
-          <div className="profile-cover"></div>
+          <div className="profile-cover" aria-hidden="true"></div>
           <div className="profile-identity">
             <span className="profile-avatar"><Portrait girl={selectedGirl} alt="" /></span>
             <div className="profile-title">
@@ -694,6 +1080,7 @@ export default function Home() {
             <div><span className="eyebrow">About @{selectedGirl.handle}</span><h2>{selectedGirl.personality}</h2><p>{selectedGirl.bio}</p><p>Profile media in this demo is placeholder concept art. Production photos and likenesses require adult model approval.</p></div>
           </section>
         )}
+        </div>
       </div>
     );
   }
@@ -715,6 +1102,7 @@ export default function Home() {
 
   function Messages() {
     const progress = state.girls[selectedGirlId];
+    const moodLabel = getMoodLabel(progress).replace("-", " ");
     const scene = selectedGirl.chatScenes[progress.chatSceneIndex % selectedGirl.chatScenes.length];
     const event = progress.pendingSpendEvent;
     const guessOptions = event
@@ -746,34 +1134,73 @@ export default function Home() {
             <header className="thread-header">
               <button className="post-author" onClick={() => openProfile(selectedGirlId)}>
                 <span className="mini-avatar"><Portrait girl={selectedGirl} alt="" /></span>
-                <span><b>{selectedGirl.name}</b><small>@{selectedGirl.handle} · {progress.breakUntil > Date.now() ? "taking space" : "private circle"}</small></span>
+                <span><b>{selectedGirl.name}</b><small>@{selectedGirl.handle} · {moodLabel}</small></span>
               </button>
-              <button onClick={() => openProfile(selectedGirlId, "room")}>View room</button>
+              <div className="thread-header-actions">
+                <button className={progress.chatMode === "ai" ? "active" : ""} onClick={() => progress.chatMode === "ai" ? switchToScriptedChat() : enableAIChat()}>{progress.chatMode === "ai" ? "AI Chat Beta on" : "Try AI Chat Beta"}</button>
+                <button onClick={() => openProfile(selectedGirlId, "room")}>View room</button>
+              </div>
             </header>
             <div className="thread-scroll">
               <div className="shared-scene">
                 <RoomScene girl={selectedGirl} state={state} pendingRewardId={event?.rewardId} compact />
               </div>
-              <div className="message incoming"><p>{event ? `${selectedGirl.name}: Something changed. Tell me you actually looked.` : lastReply || scene.prompt}</p></div>
-              {lastPlayerLine && <div className="message outgoing"><p>{lastPlayerLine}</p></div>}
               {event ? (
                 <section className="guess-panel">
+                  <div className="message incoming"><p>{selectedGirl.name}: Something changed. Tell me you actually looked.</p></div>
                   <span className="eyebrow">Observation check</span>
                   <h3>What appeared in the room?</h3>
                   <div className="reply-grid">{guessOptions.sort(() => Math.random() - 0.5).map((reward) => <button key={reward.id} onClick={() => guessReward(reward.id)}>{reward.name}</button>)}</div>
                 </section>
-              ) : lastReply ? (
-                <button className="continue-button" onClick={() => { setLastReply(""); setLastPlayerLine(""); setFeedback("Choose a suggested reply."); }}>Continue conversation</button>
-              ) : (
-                <section className="suggested-replies">
-                  <span className="eyebrow">Suggested replies</span>
-                  <div className="reply-grid">{scene.choices.map((choice) => <button key={choice.id} onClick={() => chooseReply(choice)}>{choice.text}</button>)}</div>
+              ) : progress.chatMode === "ai" ? (
+                <section className="ai-conversation">
+                  {!progress.aiMessages.length && aiStatus === "ready" && <div className="ai-empty"><span>✦</span><h3>Local AI chat is ready</h3><p>Write naturally. Her mood, boredom and familiarity respond to the way you speak.</p></div>}
+                  {progress.aiMessages.map((message) => <div className={`message ${message.role === "player" ? "outgoing" : "incoming"}`} key={message.id}><small>{message.role === "player" ? state.playerName : selectedGirl.name}</small><p>{message.content}</p></div>)}
+                  {streamingReply && <div className="message incoming generating"><small>{selectedGirl.name} · responding locally</small><p>{streamingReply}<i></i></p></div>}
+                  {aiStatus === "loading" && (
+                    <section className="model-loader">
+                      <span className="eyebrow">One-time local setup</span>
+                      <h3>Preparing {WEBLLM_MODEL_ID.split("-").slice(0, 2).join(" ")}</h3>
+                      <p>The free model is downloading to this browser. It remains local and will be cached for later visits.</p>
+                      <div><i style={{ width: `${aiProgress}%` }}></i></div><b>{aiProgress}%</b><small>{aiProgressText}</small>
+                      <button onClick={switchToScriptedChat}>Return to scripted chat</button>
+                    </section>
+                  )}
+                  {aiStatus === "unsupported" && <section className="ai-fallback"><h3>AI Chat Beta is not available on this device</h3><p>This browser does not provide the WebGPU support needed to run the model locally. Scripted chat is still fully available.</p><button onClick={switchToScriptedChat}>Use scripted chat</button></section>}
+                  {aiStatus === "error" && <section className="ai-fallback"><h3>The local model stopped</h3><p>No game progress was lost. Retry the local model or continue with scripted replies.</p><div><button onClick={enableAIChat}>Retry AI setup</button><button onClick={switchToScriptedChat}>Use scripted chat</button></div></section>}
+                  {aiStatus === "idle" && <section className="ai-consent-card"><span className="eyebrow">Free local AI beta</span><h3>Run the conversation on this device</h3><p>Pink Ledger will download a small open model once and run it inside this browser. There is no paid API, no per-message fee and no server-side AI account.</p><ul><li>Requires a WebGPU-capable browser.</li><li>First setup can take several minutes.</li><li>Scripted chat always remains available.</li></ul><button className="primary" onClick={enableAIChat}>Download and enable AI Chat Beta</button></section>}
                 </section>
+              ) : (
+                <>
+                  <div className="message incoming"><p>{lastReply || scene.prompt}</p></div>
+                  {lastPlayerLine && <div className="message outgoing"><p>{lastPlayerLine}</p></div>}
+                  {lastReply ? (
+                    <button className="continue-button" onClick={() => { setLastReply(""); setLastPlayerLine(""); setFeedback("Choose a suggested reply."); }}>Continue conversation</button>
+                  ) : (
+                    <section className="suggested-replies">
+                      <span className="eyebrow">Suggested replies</span>
+                      <div className="reply-grid">{scene.choices.map((choice) => <button key={choice.id} onClick={() => chooseReply(choice)}>{choice.text}</button>)}</div>
+                    </section>
+                  )}
+                </>
               )}
               <p className="feedback-line">{feedback}</p>
             </div>
             <footer className="tribute-dock">
-              <div><span>Attention</span><b>{progress.mood}%</b><i><em style={{ width: `${progress.mood}%` }}></em></i></div>
+              <div className="relationship-meters">
+                <span><i>Mood</i><b>{progress.mood}%</b><em><u style={{ width: `${progress.mood}%` }}></u></em></span>
+                <span><i>Interest</i><b>{100 - progress.boredom}%</b><em><u style={{ width: `${100 - progress.boredom}%` }}></u></em></span>
+                <span><i>Familiarity</i><b>{progress.familiarity}%</b><em><u style={{ width: `${progress.familiarity}%` }}></u></em></span>
+              </div>
+              {progress.chatMode === "ai" && aiStatus === "ready" && (
+                <div className="ai-composer">
+                  <label><span className="sr-only">Message {selectedGirl.name}</span><textarea value={aiDraft} maxLength={500} rows={2} placeholder={`Message ${selectedGirl.name}…`} onChange={(event) => setAiDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendAIMessage(); } }} /></label>
+                  <button className="primary" disabled={!aiDraft.trim() || progress.breakUntil > Date.now()} onClick={() => void sendAIMessage()}>Send</button>
+                  <button onClick={resetAIConversation}>Reset</button>
+                  <button onClick={switchToScriptedChat}>Scripted</button>
+                </div>
+              )}
+              {progress.chatMode === "ai" && aiStatus === "generating" && <div className="generation-controls"><span>{selectedGirl.name} is composing locally…</span><button onClick={() => { interruptWebLLM(); setAiStatus("ready"); setStreamingReply(""); }}>Stop</button></div>}
               <div className="tribute-buttons">
                 {TRIBUTE_AMOUNTS.slice(0, 4).map((amount) => (
                   <button key={amount} disabled={state.money < amount || Boolean(progress.pendingSpendEvent)} onClick={() => setConfirm({ type: "tribute", amount })}>
@@ -841,7 +1268,7 @@ export default function Home() {
           <section className="studio-form">
             <div className="studio-progress"><span className={studioStep >= 1 ? "active" : ""}>1 Character</span><span className={studioStep >= 2 ? "active" : ""}>2 Direction</span><span className={studioStep >= 3 ? "active" : ""}>3 Review</span></div>
             {studioStep === 1 && (
-              <div className="studio-step"><span className="eyebrow">Step one</span><h2>Who inspires the piece?</h2><div className="character-choice">{[...girls.map((girl) => girl.name), "Artist's choice"].map((name) => <button className={commission.character === name ? "active" : ""} key={name} onClick={() => setCommission({ ...commission, character: name })}>{name}</button>)}</div><button className="primary" onClick={() => setStudioStep(2)}>Choose the direction</button></div>
+              <div className="studio-step"><span className="eyebrow">Step one</span><h2>Who is this piece for?</h2><div className="character-choice">{[state.playerName, ...girls.map((girl) => girl.name), "Artist's choice"].map((name) => <button className={commission.character === name ? "active" : ""} key={name} onClick={() => setCommission({ ...commission, character: name })}>{name === state.playerName ? `${name} · your profile` : name}</button>)}</div><button className="primary" onClick={() => setStudioStep(2)}>Choose the direction</button></div>
             )}
             {studioStep === 2 && (
               <div className="studio-step"><span className="eyebrow">Step two</span><h2>Describe the artwork</h2>
@@ -857,17 +1284,57 @@ export default function Home() {
             )}
           </section>
         )}
-        {submittedCommissions.length > 0 && <section className="request-list"><span className="eyebrow">Your requests</span>{submittedCommissions.map((request) => <article key={request.id}><b>{request.character} · {formatName[request.format]}</b><span>{request.status}</span></article>)}</section>}
+        {state.artistRequests.length > 0 && <section className="request-list"><span className="eyebrow">Your requests</span>{state.artistRequests.map((request) => <article key={request.id}><b>{request.character} · {formatName[request.format] ?? request.format}</b><span>{request.status}</span></article>)}</section>}
+      </section>
+    );
+  }
+
+  function Places() {
+    const destinations = [
+      { id: "cafe", name: "Moonmilk Café", copy: "A quiet table for longer conversations.", tag: "date location" },
+      { id: "arcade", name: "Ribbon Arcade", copy: "Co-op games, neon prizes and Runa's favourite queue.", tag: "date location" },
+      { id: "night-market", name: "Blush Night Market", copy: "Street lights, art stalls and small collectible discoveries.", tag: "date location" },
+      { id: "rooftop", name: "Lavender Rooftop", copy: "City lights and private milestone scenes.", tag: "date location" },
+      { id: "gallery", name: "Paper Moon Gallery", copy: "Character art, exhibitions and artist events.", tag: "date location" },
+      { id: "waterfront", name: "Soft Sky Waterfront", copy: "A slower place for relationship chapters.", tag: "date location" },
+    ];
+    return (
+      <section className="places-page">
+        <div className="places-hero"><span className="eyebrow">The world beyond the feed</span><h1>Places</h1><p>Pink Ledger begins as a social network. These doors are the structure for the larger game growing around it.</p></div>
+        <div className="available-places">
+          <button onClick={() => navigate("home")}><i>⌂</i><span><b>Social Feed</b><small>Open now</small></span></button>
+          <button onClick={() => navigate("discover")}><i>▣</i><span><b>Private Rooms</b><small>Available through profiles</small></span></button>
+          <button onClick={() => navigate("studio")}><i>✎</i><span><b>Artist&apos;s Studio</b><small>Requests open</small></span></button>
+        </div>
+        <section className="casino-placeholder">
+          <div><span className="eyebrow">Future destination</span><h2>The Velvet Casino</h2><p>A fictional late-night destination planned for social encounters, events, collectible opportunities and game rewards. No gambling or real-money systems are active.</p>
+            <button className={state.placeReminders.includes("casino") ? "active" : ""} onClick={() => updateState((draft) => { draft.placeReminders = draft.placeReminders.includes("casino") ? draft.placeReminders.filter((id) => id !== "casino") : [...draft.placeReminders, "casino"]; })}>{state.placeReminders.includes("casino") ? "Reminder saved" : "Notify me in the demo"}</button>
+          </div><span className="casino-mark">♢</span>
+        </section>
+        <div className="section-heading"><span className="eyebrow">Future outings</span><h2>Date locations</h2></div>
+        <div className="destination-grid">
+          {destinations.map((place, index) => <article key={place.id} style={{ "--place-index": index } as React.CSSProperties}><span>{place.tag} · coming soon</span><h3>{place.name}</h3><p>{place.copy}</p><div><small>Compatibility</small><i>{index % 3 === 0 ? "art · calm" : index % 3 === 1 ? "games · energy" : "style · discovery"}</i></div><button className={state.placeReminders.includes(place.id) ? "active" : ""} onClick={() => updateState((draft) => { draft.placeReminders = draft.placeReminders.includes(place.id) ? draft.placeReminders.filter((id) => id !== place.id) : [...draft.placeReminders, place.id]; })}>{state.placeReminders.includes(place.id) ? "Saved" : "Save for later"}</button></article>)}
+        </div>
       </section>
     );
   }
 
   function PlayerProfile() {
+    const avatar = AVATARS.find((item) => item.id === state.profile.avatarId) ?? AVATARS[0];
     return (
       <section className="player-page">
-        <div className="player-banner"><span className="player-avatar">{state.avatarIcon}</span><div><span className="eyebrow">Collector profile</span><h1>{state.playerName}</h1><p>{state.finSubStyle} style · local demo profile</p></div></div>
-        <div className="player-stats"><article><b>{state.credits}</b><span>credits</span></article><article><b>{state.money}</b><span>fictional money</span></article><article><b>{state.inventory.length}</b><span>art cards</span></article><article><b>{state.unlockedGirlIds.length}</b><span>private circles</span></article></div>
-        <section className="settings-card"><h2>Account and demo settings</h2><p>All progression is stored in this browser. This fictional platform does not process real payments.</p><button onClick={exchangeCredits} disabled={state.credits < EXCHANGE_RATE.credits}>Exchange earned credits</button><button className="danger" onClick={() => { if (window.confirm("Reset all local Pink Ledger progress?")) { for (const key of [STORAGE_KEY, ...LEGACY_KEYS]) window.localStorage.removeItem(key); setState(createDefaultState()); setScreen("home"); } }}>Reset local progress</button></section>
+        <section className={`player-profile-hero banner-${state.profile.bannerId}`} style={{ "--profile-accent": state.profile.accent } as React.CSSProperties}>
+          <div className="player-cover" aria-hidden="true"></div>
+          <div className="player-profile-identity"><span className="player-avatar">{avatar.symbol}</span><div><span className="eyebrow">Player social profile</span><h1>{state.playerName}</h1><p>@{state.profile.handle}</p></div><button className="primary" onClick={beginProfileEdit}>Edit profile</button></div>
+          <p className="player-bio">{state.profile.bio}</p>
+          {state.profile.tagline && <span className="profile-tagline">{state.profile.tagline}</span>}
+        </section>
+        <div className="player-stats"><article><b>{state.unlockedGirlIds.length}</b><span>private circles</span></article><article><b>{state.inventory.length}</b><span>art cards</span></article><article><b>{Object.values(state.girls).reduce((total, progress) => total + progress.activeChangeIds.length, 0)}</b><span>room discoveries</span></article><article><b>{Object.values(state.girls).filter((progress) => progress.familiarity >= 35).length}</b><span>milestones</span></article></div>
+        <div className="player-profile-grid">
+          <section className="activity-card"><div className="section-heading"><span className="eyebrow">Your network history</span><h2>Recent activity</h2></div>{state.activity.length ? state.activity.slice(0, 6).map((item) => <article key={item.id}><i>✦</i><div><b>{item.label}</b><p>{item.detail}</p><small>{new Date(item.createdAt).toLocaleDateString()}</small></div></article>) : <p className="empty-state">Your profile is ready. Collections, private circles and artist requests will build this history.</p>}</section>
+          <section className="profile-collection-preview"><div className="section-heading"><span className="eyebrow">Scrapbook</span><h2>Collection preview</h2></div>{state.inventory.slice(0, 3).map((token) => <article key={token.id}><img src="/art/reward-collection.webp" alt="" /><span><b>{token.name}</b><small>{girlById(token.girlId).name}</small></span></article>)}{!state.inventory.length && <p className="empty-state">Correctly identify a room purchase to add your first art card.</p>}<button onClick={() => navigate("collection")}>Open full collection</button></section>
+        </div>
+        <section className="settings-card"><h2>Account and demo settings</h2><p>All progression and AI chat history stay in this browser. WebLLM runs locally and no paid AI API is configured.</p><button onClick={exchangeCredits} disabled={state.credits < EXCHANGE_RATE.credits}>Exchange earned credits</button><button onClick={() => navigate("studio")}>Commission profile artwork</button><button className="danger" onClick={() => { if (window.confirm("Reset all local Pink Ledger progress?")) { for (const key of [SAVE_KEY, ...LEGACY_SAVE_KEYS]) window.localStorage.removeItem(key); setState(createDefaultState()); setScreen("home"); } }}>Reset local progress</button></section>
         <section className="fiction-card"><h2>Fiction and media notice</h2><p>Pink Ledger is a fictional social game. Demo art is original placeholder material. Any future real photos, rooms or likenesses must belong to consenting adult models and be approved for the exact public or private use shown.</p></section>
       </section>
     );
@@ -879,20 +1346,23 @@ export default function Home() {
         <button className="brand" onClick={() => navigate("home")}><span>PL</span><b>Pink Ledger</b></button>
         <nav>
           {navItems.map((item) => <button className={screen === item.id ? "active" : ""} key={item.id} onClick={() => navigate(item.id)}><i>{item.icon}</i><span>{item.label}</span></button>)}
+          <button className={screen === "collection" ? "active" : ""} onClick={() => navigate("collection")}><i>▧</i><span>Collection</span></button>
           <button className={screen === "studio" ? "active" : ""} onClick={() => navigate("studio")}><i>✎</i><span>Artist&apos;s Studio</span></button>
+          <button className="notification-nav-button" onClick={() => setNotificationsOpen(true)}><i>♧</i><span>Notifications</span>{unreadCount > 0 && <b>{unreadCount}</b>}</button>
         </nav>
         <div className="desktop-wallet"><span>{state.credits} cr</span><span>{state.money} money</span><button onClick={exchangeCredits} disabled={state.credits < EXCHANGE_RATE.credits}>Exchange</button></div>
         <p>Fictional adult profiles · demo</p>
       </aside>
       <section className="app-column">
-        <header className="mobile-header"><button className="brand" onClick={() => navigate("home")}><span>PL</span><b>Pink Ledger</b></button><button onClick={() => navigate("profile")}>{state.money} ◇</button></header>
+        <header className="mobile-header"><button className="brand" onClick={() => navigate("home")}><span>PL</span><b>Pink Ledger</b></button><div><button className="mobile-notifications" onClick={() => setNotificationsOpen(true)}>♧{unreadCount > 0 && <b>{unreadCount}</b>}</button><button onClick={() => navigate("profile")}>{state.money} ◇</button></div></header>
         <div className="app-content">
-          {screen === "home" && <Feed />}
-          {screen === "discover" && <Discover />}
-          {screen === "messages" && <Messages />}
-          {screen === "collection" && <Collection />}
-          {screen === "studio" && <Studio />}
-          {screen === "profile" && <PlayerProfile />}
+          {screen === "home" && Feed()}
+          {screen === "discover" && Discover()}
+          {screen === "messages" && Messages()}
+          {screen === "collection" && Collection({})}
+          {screen === "places" && Places()}
+          {screen === "studio" && Studio()}
+          {screen === "profile" && PlayerProfile()}
         </div>
       </section>
       <nav className="mobile-nav">
@@ -908,6 +1378,15 @@ export default function Home() {
         >
           <span>♡</span><div><b>{notice.title}</b><p>{notice.body}</p></div><i>open</i>
         </button>
+      )}
+      {notificationsOpen && (
+        <div className="notification-drawer-backdrop" onClick={() => setNotificationsOpen(false)}>
+          <aside className="notification-drawer" role="dialog" aria-modal="true" aria-label="Notifications" onClick={(event) => event.stopPropagation()}>
+            <header><div><span className="eyebrow">Your network</span><h2>Notifications</h2></div><button onClick={() => setNotificationsOpen(false)}>Close</button></header>
+            <div>{state.notifications.length ? state.notifications.map((item) => <button className={item.read ? "read" : ""} key={item.id} onClick={() => openNotification(item)}><i>{item.read ? "○" : "●"}</i><span><b>{item.title}</b><p>{item.body}</p><small>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "New"}</small></span></button>) : <p className="empty-state">No notifications yet.</p>}</div>
+            {unreadCount > 0 && <button className="mark-read" onClick={() => updateState((draft) => { draft.notifications.forEach((item) => { item.read = true; }); })}>Mark all as read</button>}
+          </aside>
+        </div>
       )}
       {confirm && (
         <div className="modal-backdrop" role="presentation" onClick={() => setConfirm(null)}>

@@ -292,6 +292,16 @@ export const girls: GirlCharacter[] = [
       soft: "#ffe0ef",
       ink: "#6e3155",
     },
+    conversation: {
+      publicPersona: "A polished pink-room creator who posts playful challenges and carefully staged details.",
+      privatePersona: "Bossy, observant and selectively warm when someone proves they listened.",
+      voice: "Concise, teasing, confident and detail-focused. Uses soft imagery without becoming childish.",
+      interests: ["fashion", "room styling", "ribbons", "photography", "thoughtful compliments"],
+      dislikes: ["generic flattery", "being rushed", "repeated questions", "self-centred replies"],
+      preferredTopics: ["vanity styling", "new accessories", "room details", "creative art direction"],
+      boredomTriggers: ["repeating the same compliment", "asking what she already explained", "one-word demands"],
+      boundaries: ["Do not pressure her to reply", "Do not claim ownership of her choices", "Respect a requested break"],
+    },
     chatScenes: [
       {
         id: "kiyo-hello",
@@ -449,6 +459,16 @@ export const girls: GirlCharacter[] = [
       soft: "#f7ddff",
       ink: "#553064",
     },
+    conversation: {
+      publicPersona: "An elegant lifestyle account built around lace, careful presentation and a sharp eye.",
+      privatePersona: "Playful and strategic; she values consistency, attention and precise observations.",
+      voice: "Elegant, dry, lightly demanding and articulate. Prefers specific answers over enthusiastic noise.",
+      interests: ["beauty details", "lace fashion", "journaling", "photography", "careful planning"],
+      dislikes: ["sloppy assumptions", "cheap jokes", "interruptions", "being treated generically"],
+      preferredTopics: ["styling choices", "creative routines", "collections", "small visual changes"],
+      boredomTriggers: ["vague praise", "changing topics abruptly", "complaining about her boundaries"],
+      boundaries: ["Do not demand private content", "Do not argue with a break", "Do not request off-platform contact"],
+    },
     chatScenes: [
       {
         id: "mimi-attention",
@@ -605,6 +625,16 @@ export const girls: GirlCharacter[] = [
       main: "#ff86a8",
       soft: "#ffe5f1",
       ink: "#623348",
+    },
+    conversation: {
+      publicPersona: "A gamer-artist account sharing queues, desk upgrades and bright collectible drops.",
+      privatePersona: "Competitive, witty and energetic until repetitive conversation drains her attention.",
+      voice: "Quick, playful and game-literate with short metaphors drawn from queues, drops and co-op play.",
+      interests: ["games", "digital art", "arcades", "music", "desk technology"],
+      dislikes: ["back-seat gaming", "spoilers", "repetitive boasting", "ignoring her interests"],
+      preferredTopics: ["recent games", "character art", "arcade culture", "music", "creative technology"],
+      boredomTriggers: ["asking only about appearance", "repeating a question", "turning every topic back to the player"],
+      boundaries: ["No rage or insults", "Respect her time away", "Do not ask for real contact or personal data"],
     },
     chatScenes: [
       {
@@ -772,6 +802,7 @@ export const rivalLeaderboards: Record<GirlId, LeaderboardEntry[]> = {
 
 export function createDefaultState(): PlayerState {
   return {
+    schemaVersion: 4,
     playerName: "",
     ageConfirmed: false,
     avatarIcon: "PL",
@@ -783,6 +814,33 @@ export function createDefaultState(): PlayerState {
     lastDemandAt: 0,
     unlockedGirlIds: ["kiyo", "mimi"],
     inventory: [],
+    profile: {
+      complete: false,
+      handle: "",
+      bio: "",
+      tagline: "",
+      avatarId: "plum-moon",
+      bannerId: "blush-clouds",
+      accent: "#c35f85",
+      ownedAvatarIds: ["plum-moon", "rose-ribbon", "blue-star"],
+      ownedBannerIds: ["blush-clouds", "lavender-dusk", "soft-sky"],
+    },
+    likedPostIds: [],
+    bookmarkedPostIds: [],
+    notifications: [
+      {
+        id: "welcome-network",
+        title: "Welcome to Pink Ledger",
+        body: "Your private fictional network is ready.",
+        createdAt: 0,
+        read: false,
+        destination: "profile",
+      },
+    ],
+    activity: [],
+    artistRequests: [],
+    placeReminders: [],
+    aiChatAcknowledged: false,
     girls: girls.reduce((accumulator, girl) => {
       accumulator[girl.id] = {
         chatSceneIndex: 0,
@@ -798,6 +856,12 @@ export function createDefaultState(): PlayerState {
         activeChangeIds: [],
         unlockedRewardIds: [],
         leaderboard: rivalLeaderboards[girl.id],
+        boredom: 18,
+        familiarity: 12,
+        recentTopics: [],
+        conversationSummary: "",
+        chatMode: "scripted",
+        aiMessages: [],
       };
       return accumulator;
     }, {} as PlayerState["girls"]),

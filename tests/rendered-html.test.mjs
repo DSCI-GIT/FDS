@@ -35,11 +35,14 @@ test("server-renders the social game application", async () => {
 });
 
 test("implements the fictional social, room, chat and collection systems", async () => {
-  const [page, data, payments, css] = await Promise.all([
+  const [page, data, payments, css, social, webllm, worker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/game/data.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/game/payments.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/game/social.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/game/webllm.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/game/webllm.worker.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /Home Feed|For you/);
@@ -52,12 +55,29 @@ test("implements the fictional social, room, chat and collection systems", async
   assert.match(page, /suggested replies/i);
   assert.match(page, /collection-grid/);
   assert.match(page, /fictional money/i);
+  assert.match(page, /AI Chat Beta/);
+  assert.match(page, /Make it yours/);
+  assert.match(page, /The Velvet Casino/);
+  assert.match(page, /Date locations/);
+  assert.match(page, /toggleBookmark/);
+  assert.match(page, /profileDraft/);
+  assert.match(page, /notification-drawer/);
   assert.match(data, /unlockedGirlIds:\s*\["kiyo",\s*"mimi"\]/);
+  assert.match(data, /conversation:/);
   assert.match(data, /pendingTributes/);
   assert.match(data, /nextSpendAt/);
   assert.match(payments, /enabled:\s*false/);
   assert.match(css, /mobile-nav/);
   assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /\.profile-cover\s*\{[^}]*pointer-events:\s*none/s);
+  assert.match(css, /\.profile-identity,\s*\.profile-bio,\s*\.profile-stats\s*\{[^}]*z-index:\s*2/s);
+  assert.match(social, /schemaVersion:\s*4/);
+  assert.match(social, /evaluateInteraction/);
+  assert.match(social, /buildCharacterPrompt/);
+  assert.match(webllm, /Qwen2\.5-0\.5B-Instruct/);
+  assert.match(webllm, /CreateWebWorkerMLCEngine/);
+  assert.match(webllm, /supportsWebLLM/);
+  assert.match(worker, /WebWorkerMLCEngineHandler/);
   assert.doesNotMatch(page, /stripe|paypal|card number|USD/i);
 });
 

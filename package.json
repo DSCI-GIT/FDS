@@ -10,11 +10,13 @@
     "build": "vinext build",
     "start": "vinext start",
     "export:static": "node scripts/export-static.mjs",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && npm run test:logic && node --test tests/rendered-html.test.mjs",
+    "test:logic": "esbuild tests/social-state.test.ts --bundle --platform=node --format=esm --outfile=.test-dist/social-state.test.mjs && node --test .test-dist/social-state.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.84",
     "drizzle-orm": "0.45.2",
     "next": "16.2.6",
     "react": "19.2.6",
