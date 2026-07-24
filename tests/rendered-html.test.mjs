@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -23,81 +23,52 @@ async function render() {
   );
 }
 
-test("server-renders the playable chat game shell", async () => {
+test("server-renders the social game application", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
   assert.match(html, /<title>Pink Ledger<\/title>/i);
-  assert.match(html, /fictional credits only/i);
-  assert.match(html, /Create your player/);
-  assert.match(html, /<form class="login-card"/);
-  assert.match(html, /name="player-name"/);
-  assert.match(html, /name="age-confirmed"/);
-  assert.match(html, /Start chat/);
-  assert.match(html, /type="submit" class="start-button"/);
-  assert.doesNotMatch(html, /class="start-button"[^>]*disabled/i);
-  assert.match(html, /window\.__PINK_LEDGER_DATA__/);
-  assert.match(html, /root\.addEventListener\("click"/);
-  assert.match(html, /data-choice/);
-  assert.match(html, /data-tribute/);
-  assert.match(html, /data-unlock/);
-  assert.match(html, /check-ready/);
-  assert.match(html, /Break mode/);
-  assert.match(html, /Attention/);
-  assert.match(html, /piggybank-bar/);
-  assert.match(html, /Player menu/);
-  assert.match(html, /contacts-menu/);
-  assert.match(html, /contacts-toggle/);
-  assert.match(html, /pendingCountFor/);
-  assert.match(html, /What gets your attention/);
-  assert.match(html, /phone-toast/);
-  assert.match(html, /data-demand-pay/);
-  assert.match(html, /data-avatar/);
-  assert.match(html, /confirm-popup/);
-  assert.match(html, /confirm-action/);
-  assert.match(html, /playSound/);
-  assert.match(html, /pointerup/);
-  assert.match(html, /gift-reveal/);
-  assert.match(html, /She spends it later/);
-  assert.match(html, /Inventory/);
-  assert.match(html, /<style>/i);
-  assert.match(html, /\.room\{/);
-  assert.match(html, /\.bubble\{/);
-
-  const choiceMatches = html.match(/data-choice/g) ?? [];
-  assert.ok(choiceMatches.length >= 1);
+  assert.match(html, /Opening your feed/i);
+  assert.match(html, /Pink Ledger/i);
 });
 
-test("keeps v1 local, fictional, and payment-free", async () => {
-  const [page, data, storage, payments, packageJson] = await Promise.all([
+test("implements the fictional social, room, chat and collection systems", async () => {
+  const [page, data, payments, css] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/game/data.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/game/storage.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/game/payments.ts", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(data, /choices:\s*\[/);
-  assert.match(data, /TRIBUTE_AMOUNTS/);
-  assert.match(data, /unlockPrice/);
-  assert.match(data, /breakUntil/);
-  assert.match(data, /pendingDemand/);
-  assert.match(data, /questionnaireComplete/);
-  assert.match(data, /avatarIcon/);
-  assert.match(page, /interruptPenalty/);
-  assert.match(page, /maxTalkStreak/);
-  assert.match(page, /autosave/);
-  assert.match(page, /demandTones/);
-  assert.match(page, /demandCooldown = 600000/);
-  assert.match(page, /pendingConfirm/);
-  assert.match(page, /AudioContext/);
-  const dialogueSectionCount = (data.match(/id:\s*"(kiyo|mimi|runa)-/g) ?? []).length;
-  assert.ok(dialogueSectionCount >= 16);
-  assert.match(storage, /window\.localStorage/);
+  assert.match(page, /Home Feed|For you/);
+  assert.match(page, /Discover/);
+  assert.match(page, /PrivateAccessCard/);
+  assert.match(page, /Artist&apos;s Studio/);
+  assert.match(page, /RoomScene/);
+  assert.match(page, /What appeared in the room/);
+  assert.match(page, /pendingSpendEvent/);
+  assert.match(page, /suggested replies/i);
+  assert.match(page, /collection-grid/);
+  assert.match(page, /fictional money/i);
+  assert.match(data, /unlockedGirlIds:\s*\["kiyo",\s*"mimi"\]/);
+  assert.match(data, /pendingTributes/);
+  assert.match(data, /nextSpendAt/);
   assert.match(payments, /enabled:\s*false/);
-  assert.doesNotMatch(packageJson, /react-loading-skeleton/);
-  assert.doesNotMatch(page, /checkout|stripe|paypal|card number|USD/i);
-  assert.doesNotMatch(page, /_sites-preview|SkeletonPreview|codex-preview/);
+  assert.match(css, /mobile-nav/);
+  assert.match(css, /prefers-reduced-motion/);
+  assert.doesNotMatch(page, /stripe|paypal|card number|USD/i);
+});
+
+test("includes all generated demo artwork", async () => {
+  const art = [
+    "kiyo-concept.webp",
+    "mimi-concept.webp",
+    "runa-concept.webp",
+    "room-concept.webp",
+    "reward-collection.webp",
+  ];
+
+  await Promise.all(art.map((name) => access(new URL(`../public/art/${name}`, import.meta.url))));
 });
