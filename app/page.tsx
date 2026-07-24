@@ -56,6 +56,7 @@ const styles = `
 .confirming{outline:3px solid #ffd166!important;background:#5b3a4a!important;color:#fff!important;animation:confirmPulse .8s ease-in-out infinite alternate}@keyframes confirmPulse{from{transform:translateY(0)}to{transform:translateY(-2px)}}.piggybank b:after{content:" Menu";font-size:.68rem;color:rgba(110,49,85,.72)}
 @media(max-width:760px){html,body{overflow-x:hidden}.game-shell{min-height:100svh;padding:0 0 48px;background:linear-gradient(180deg,#fff5fb 0,#ffe1ef 42%,#fff8fc 100%)}.topbar{position:sticky;top:0;z-index:8;display:flex;margin:0;padding:10px 12px;border-width:0 0 2px;border-radius:0;background:rgba(255,250,253,.96);box-shadow:0 10px 26px rgba(145,74,109,.16);backdrop-filter:blur(10px)}.topbar .sticker-mark{font-size:1rem}.play-guide{display:flex;overflow-x:auto;flex-wrap:nowrap;margin:0;padding:9px 12px;border:0;border-radius:0;background:#fff8fc;box-shadow:none;scrollbar-width:none}.play-guide span,.play-guide strong{white-space:nowrap}.game-grid{gap:0;margin:0}.roster{display:flex;position:sticky;top:54px;z-index:7;overflow-x:auto;gap:8px;padding:10px 12px;background:rgba(255,248,252,.96);box-shadow:0 8px 22px rgba(145,74,109,.1);scrollbar-width:none}.girl-tab{min-width:132px;padding:10px;border-width:1px;box-shadow:none}.girl-tab b{font-size:1.05rem}.stage{grid-template-rows:auto auto;gap:0}.room{min-height:70svh;height:auto;margin:0;border-width:0 0 7px;border-radius:0;box-shadow:none}.bed{left:10px;bottom:96px;width:54%;height:112px}.desk{right:8px;bottom:106px;width:32%;height:90px}.screen{left:18px;top:-40px;width:72px;height:48px}.avatar{right:-12px;bottom:112px;width:236px;height:330px;transform:scale(.72);transform-origin:bottom right}.bubble{left:10px;right:10px;bottom:8px;grid-template-columns:66px 1fr;min-height:86px;border-width:7px;border-radius:999px 14px 14px 999px}.speaker{font-size:.95rem}.bubble-copy{padding:9px 11px}.bubble p{font-size:.94rem}.chat-panel{margin:0;padding:12px;border-width:0 0 2px;border-radius:0;box-shadow:none}.meta{display:grid;grid-template-columns:1fr}.meta h1{font-size:1.35rem}.mood{min-width:0}.choices{grid-template-columns:1fr;gap:10px}.choice,.continue{min-height:64px;font-size:.98rem}.side-stack{display:grid;grid-template-columns:1fr;gap:10px;padding:10px 12px}.panel{padding:12px;border-radius:8px;box-shadow:0 8px 22px rgba(145,74,109,.1)}.unlock-panel{order:-1}.tribute-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.tribute-button{min-height:52px;padding:8px;font-size:.92rem}.reward-list{grid-template-columns:1fr}.reward{padding:9px}.gift-card{padding:18px}.gift-icon{width:92px;height:92px;font-size:2.2rem}.reset{right:10px;bottom:10px;z-index:9;min-height:42px;display:none}.login-room{min-height:100svh;width:100%;border:0;border-radius:0}.login-room:before{left:12px;bottom:42px;width:58%;height:120px}.login-card{top:auto;bottom:18px;left:12px;right:12px;width:auto;padding:18px;transform:none}.login-card h1{font-size:1.65rem}.unlock-row{grid-template-columns:1fr}.unlock-row button,.unlock-row span{width:100%;text-align:center}.persona-grid{grid-template-columns:1fr}.menu-actions{grid-template-columns:1fr}.player-menu{place-items:end center;padding:10px}.player-card{max-height:92svh;overflow:auto}}
 .contacts-toggle{position:relative;justify-self:end;min-height:40px;padding:8px 14px;border:0;border-radius:999px;background:var(--main);color:#fff;font-weight:950;touch-action:manipulation}.contacts-toggle span{position:absolute;right:-6px;top:-7px;display:grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border:2px solid #fff;border-radius:999px;background:#5b3a4a;color:#fff;font-size:.76rem}.contacts-toggle>*{pointer-events:none}.contacts-menu{position:fixed;inset:0;z-index:42;display:grid;place-items:end center;padding:14px;background:rgba(70,31,52,.28);backdrop-filter:blur(7px)}.contacts-card{display:grid;gap:12px;width:min(440px,100%);max-height:82svh;padding:14px;border:3px solid #ffe8f4;border-radius:12px;background:#fffafd;box-shadow:0 18px 48px rgba(99,47,75,.24)}.contacts-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.contacts-head h2{margin:0;color:var(--ink)}.contacts-head p{margin:2px 0 0;color:rgba(58,32,47,.65)}.contacts-head>span{display:grid;place-items:center;min-width:30px;height:30px;border-radius:999px;background:var(--main);color:#fff;font-weight:950}.contact-list{display:grid;gap:8px;overflow:auto}.contact-row{position:relative;display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;min-height:62px;padding:9px 12px;border:1px solid rgba(128,61,99,.14);border-radius:10px;background:#fff;color:var(--foreground);text-align:left}.contact-row.active{box-shadow:inset 0 0 0 2px var(--main)}.contact-row.locked{opacity:.65}.contact-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,var(--main),var(--soft));color:#fff;font-weight:950}.contact-row b{display:block;color:var(--ink)}.contact-row small{display:block;margin-top:2px;color:rgba(58,32,47,.66);font-weight:800}.contact-row i{display:grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#5b3a4a;color:#fff;font-style:normal;font-weight:950}.close-contacts{min-height:44px;border:0;border-radius:8px;background:var(--main);color:#fff;font-weight:950}.topbar{grid-template-columns:1fr auto}@media(max-width:760px){.topbar{display:flex!important;justify-content:space-between;align-items:center}.roster{display:none!important}.contacts-menu,.player-menu{place-items:end center;padding:10px}.contacts-card,.player-card{max-height:92svh;overflow:auto}.game-shell{padding-bottom:48px!important}}
+.confirm-popup{position:fixed;inset:0;z-index:55;display:grid;place-items:center;padding:18px;background:rgba(70,31,52,.32);backdrop-filter:blur(7px)}.confirm-popup>div{display:grid;gap:10px;width:min(360px,100%);padding:18px;border:3px solid #ffe8f4;border-radius:12px;background:#fffafd;box-shadow:0 18px 48px rgba(99,47,75,.26);text-align:center}.confirm-popup h2{margin:0;color:var(--ink)}.confirm-popup p{margin:0;color:rgba(58,32,47,.72)}.confirm-popup div div{display:grid;grid-template-columns:1fr 1fr;gap:8px}.confirm-popup button{min-height:46px;border:0;border-radius:8px;background:var(--main);color:#fff;font-weight:950}.confirm-popup button+button{background:#5b3a4a}
 `;
 
 const script = `
@@ -144,6 +145,12 @@ const script = `
     return pendingConfirm && pendingConfirm.type === type && pendingConfirm.amount === amount && pendingConfirm.girlId === selectedGirlId;
   }
   function clearConfirm(){ pendingConfirm = null; }
+  function confirmPopupHtml(){
+    if (!pendingConfirm) return "";
+    var label = pendingConfirm.type === "exchange" ? "Convert credits into money?" : pendingConfirm.type === "demand" ? "Send demanded tribute?" : "Send tribute?";
+    var detail = pendingConfirm.type === "exchange" ? "This will convert all full credit bundles." : "Amount: " + pendingConfirm.amount;
+    return '<section class="confirm-popup"><div><h2>'+escapeHtml(label)+'</h2><p>'+escapeHtml(detail)+'</p><div><button data-action="confirm-action">Confirm</button><button data-action="cancel-confirm">Cancel</button></div></div></section>';
+  }
   function girl(){ return data.girls.find(function(item){ return item.id === selectedGirlId; }) || data.girls[0]; }
   function progress(){ return state.girls[girl().id]; }
   function isGirlUnlocked(girlId){ return (state.unlockedGirlIds || ["kiyo"]).indexOf(girlId) >= 0; }
@@ -333,19 +340,73 @@ const script = `
       '<section class="stage"><div class="room"><div class="bed"></div><div class="desk"><div class="screen"></div></div>'+avatarHtml(g, p, unlocked)+'<div class="bubble"><div class="speaker">'+escapeHtml(g.name)+'</div><div class="bubble-copy">'+(lastPlayerLine?'<span class="you-said">You: '+escapeHtml(lastPlayerLine)+'</span>':'')+'<p>'+escapeHtml(lastReply || (pendingEvent ? "I spent tribute and changed something. Look before you talk." : scene.prompt))+'</p></div></div></div>' +
       '<div class="chat-panel"><div class="meta"><div><h1>'+escapeHtml(g.name)+'</h1><p>'+escapeHtml(g.personality)+'</p></div><div class="mood"><span>Mood</span><div><i style="width:'+p.mood+'%"></i></div></div></div>' +
       '<div class="attention-meter"><span>Attention '+Math.min(maxTalkStreak, p.talkStreak || 0)+'/'+maxTalkStreak+'</span><i style="width:'+(100 - Math.min(100, ((p.talkStreak || 0) / maxTalkStreak) * 100))+'%"></i></div>' +
-      (pendingEvent ? '<div class="guess-card"><b>What did '+escapeHtml(g.name)+' buy or change?</b><p>'+escapeHtml(pendingEvent.sourceIsRival ? pendingEvent.sourcePlayerName + " funded this one. If you guess their gift, they get credits too." : "She spent from your pending tribute purse.")+'</p><div class="choices">'+guessList.map(function(option){ return '<button class="choice" data-guess="'+option.id+'">'+escapeHtml(option.label)+'</button>'; }).join("")+'</div></div>' : (pendingDemand ? '<div class="demand-card"><b>'+escapeHtml(g.name)+' demands tribute</b><p>'+escapeHtml(pendingDemand.message)+'</p><div class="tribute-grid"><button class="tribute-button '+(isConfirm("demand", pendingDemand.amount)?'confirming':'')+'" data-demand-pay="'+pendingDemand.amount+'" '+(state.money < pendingDemand.amount ? 'disabled' : '')+'>'+(isConfirm("demand", pendingDemand.amount)?'Tap again: '+pendingDemand.amount:'Send '+pendingDemand.amount)+'</button><button class="choice" data-action="refuse-demand">Not now</button></div></div>' : (!ready ? '<div class="break-card"><b>Break mode</b><p>'+escapeHtml(breakHint(p))+'</p><button class="continue" data-action="check-ready">Check if she is ready</button></div>' : (lastReply ? '<button class="continue" data-action="continue">Continue chat</button>' : '<div class="choices">'+scene.choices.map(function(choice, index){ return '<button class="choice" data-choice="'+index+'">'+escapeHtml(choice.text)+'</button>'; }).join("")+'</div>')))) +
+      (pendingEvent ? '<div class="guess-card"><b>What did '+escapeHtml(g.name)+' buy or change?</b><p>'+escapeHtml(pendingEvent.sourceIsRival ? pendingEvent.sourcePlayerName + " funded this one. If you guess their gift, they get credits too." : "She spent from your pending tribute purse.")+'</p><div class="choices">'+guessList.map(function(option){ return '<button class="choice" data-guess="'+option.id+'">'+escapeHtml(option.label)+'</button>'; }).join("")+'</div></div>' : (pendingDemand ? '<div class="demand-card"><b>'+escapeHtml(g.name)+' demands tribute</b><p>'+escapeHtml(pendingDemand.message)+'</p><div class="tribute-grid"><button class="tribute-button" data-demand-pay="'+pendingDemand.amount+'" '+(state.money < pendingDemand.amount ? 'disabled' : '')+'>Send '+pendingDemand.amount+'</button><button class="choice" data-action="refuse-demand">Not now</button></div></div>' : (!ready ? '<div class="break-card"><b>Break mode</b><p>'+escapeHtml(breakHint(p))+'</p><button class="continue" data-action="check-ready">Check if she is ready</button></div>' : (lastReply ? '<button class="continue" data-action="continue">Continue chat</button>' : '<div class="choices">'+scene.choices.map(function(choice, index){ return '<button class="choice" data-choice="'+index+'">'+escapeHtml(choice.text)+'</button>'; }).join("")+'</div>')))) +
       '<p class="feedback">'+escapeHtml(feedback)+'</p></div></section>' +
-      '<aside class="side-stack"><section class="panel unlock-panel"><h2>Unlocks</h2><div class="unlock-list">'+data.girls.map(function(item){ var unlockedGirl = isGirlUnlocked(item.id); return '<article class="unlock-row '+(unlockedGirl?'owned':'')+'"><div><b>'+escapeHtml(item.name)+'</b><p>'+escapeHtml(item.unlockRequirement)+'</p></div>'+(unlockedGirl?'<span>Open</span>':'<button data-unlock="'+item.id+'" '+(state.money < item.unlockPrice ? 'disabled' : '')+'>Unlock '+item.unlockPrice+'</button>')+'</article>'; }).join("")+'</div></section><section class="panel"><h2>Tribute</h2><p>'+escapeHtml(g.bio)+' Tribute refills her attention now. She spends it later and makes you guess the change.</p><div class="pending-purse">Pending purse: '+(p.pendingTributes || 0)+'</div><div class="tribute-grid">'+data.tributeAmounts.map(function(amount){ return '<button class="tribute-button '+(isConfirm("tribute", amount)?'confirming':'')+'" data-tribute="'+amount+'" '+(state.money < amount ? 'disabled' : '')+'>'+(isConfirm("tribute", amount)?'Tap again: '+amount:'Send '+amount)+'</button>'; }).join("")+'</div><div class="reward-list">'+g.rewards.map(function(reward){ var owned = unlocked.indexOf(reward.id) >= 0; return '<article class="reward '+(owned?'owned':'')+'"><h3>'+escapeHtml(reward.name)+'</h3><small>'+(owned?'Unlocked':'Possible spend at '+reward.price+'+')+'</small><p>'+escapeHtml(reward.description)+'</p></article>'; }).join("")+'</div></section>' +
+      '<aside class="side-stack"><section class="panel unlock-panel"><h2>Unlocks</h2><div class="unlock-list">'+data.girls.map(function(item){ var unlockedGirl = isGirlUnlocked(item.id); return '<article class="unlock-row '+(unlockedGirl?'owned':'')+'"><div><b>'+escapeHtml(item.name)+'</b><p>'+escapeHtml(item.unlockRequirement)+'</p></div>'+(unlockedGirl?'<span>Open</span>':'<button data-unlock="'+item.id+'" '+(state.money < item.unlockPrice ? 'disabled' : '')+'>Unlock '+item.unlockPrice+'</button>')+'</article>'; }).join("")+'</div></section><section class="panel"><h2>Tribute</h2><p>'+escapeHtml(g.bio)+' Tribute refills her attention now. She spends it later and makes you guess the change.</p><div class="pending-purse">Pending purse: '+(p.pendingTributes || 0)+'</div><div class="tribute-grid">'+data.tributeAmounts.map(function(amount){ return '<button class="tribute-button" data-tribute="'+amount+'" '+(state.money < amount ? 'disabled' : '')+'>Send '+amount+'</button>'; }).join("")+'</div><div class="reward-list">'+g.rewards.map(function(reward){ var owned = unlocked.indexOf(reward.id) >= 0; return '<article class="reward '+(owned?'owned':'')+'"><h3>'+escapeHtml(reward.name)+'</h3><small>'+(owned?'Unlocked':'Possible spend at '+reward.price+'+')+'</small><p>'+escapeHtml(reward.description)+'</p></article>'; }).join("")+'</div></section>' +
       '<section class="panel"><h2>Inventory</h2><div class="token-list">'+(state.inventory.length ? state.inventory.slice(0,6).map(function(token){ return '<span class="token">'+escapeHtml(token.name)+'</span>'; }).join("") : '<p class="empty">Tokens appear here after you correctly identify a spend.</p>')+'</div></section>' +
-      '<section class="panel"><h2>'+escapeHtml(g.name)+' Board</h2><ol class="leaderboard">'+leaderboardRows(g.id)+'</ol></section></aside></section><section class="piggybank-bar"><button class="piggybank" data-avatar="'+escapeHtml(state.avatarIcon || "PL")+'" data-action="wallet" aria-label="Open player menu"><b>'+escapeHtml(state.playerName || "Player")+'</b><span>'+state.credits+' cr / '+state.money+' money</span></button><button class="piggy-exchange '+(isConfirm("exchange", 0)?'confirming':'')+'" data-action="exchange" '+(!canExchange?'disabled':'')+'>'+(isConfirm("exchange", 0)?'Tap again':'Exchange')+'</button></section><button class="reset" data-action="reset">Reset local save</button>' +
+      '<section class="panel"><h2>'+escapeHtml(g.name)+' Board</h2><ol class="leaderboard">'+leaderboardRows(g.id)+'</ol></section></aside></section><section class="piggybank-bar"><button class="piggybank" data-avatar="'+escapeHtml(state.avatarIcon || "PL")+'" data-action="wallet" aria-label="Open player menu"><b>'+escapeHtml(state.playerName || "Player")+'</b><span>'+state.credits+' cr / '+state.money+' money</span></button><button class="piggy-exchange" data-action="exchange" '+(!canExchange?'disabled':'')+'>Exchange</button></section><button class="reset" data-action="reset">Reset local save</button>' +
       (phoneNotice ? '<section class="phone-toast"><div><b>'+escapeHtml(phoneNotice.title)+'</b><p>'+escapeHtml(phoneNotice.body)+'</p><button data-action="close-notice">OK</button></div></section>' : '') +
       contactsHtml(totalPending) +
+      confirmPopupHtml() +
       playerMenuHtml();
   }
 
   function contactsHtml(totalPending){
     if (!contactsOpen) return "";
     return '<section class="contacts-menu"><div class="contacts-card"><div class="contacts-head"><div><h2>Girls</h2><p>Choose a chat</p></div>'+(totalPending?'<span>'+totalPending+'</span>':'')+'</div><div class="contact-list">'+data.girls.map(function(item){ var gp = state.girls[item.id]; var unlockedGirl = isGirlUnlocked(item.id); var count = pendingCountFor(item.id); var status = !unlockedGirl ? 'Locked - '+item.unlockPrice+' money' : gp.pendingSpendEvent ? 'Changed something' : gp.pendingDemand ? 'Demand text' : !isReady(gp) ? 'Taking a break' : 'Ready to chat'; return '<button class="contact-row '+(item.id===selectedGirlId?'active':'')+' '+(!unlockedGirl?'locked':'')+'" data-girl="'+item.id+'"><span class="contact-icon">'+escapeHtml(item.name.slice(0,1))+'</span><span><b>'+escapeHtml(item.name)+'</b><small>@'+escapeHtml(item.handle)+' - '+escapeHtml(status)+'</small></span>'+(count?'<i>'+count+'</i>':'')+'</button>'; }).join("")+'</div><button class="close-contacts" data-action="close-contacts">Close</button></div></section>';
+  }
+
+  function runConfirmedAction(){
+    if (!pendingConfirm) return;
+    var action = pendingConfirm;
+    clearConfirm();
+    if (action.type === "exchange") {
+      var bundles = Math.floor(state.credits / data.exchangeRate.credits);
+      if (bundles > 0) {
+        state.credits -= bundles * data.exchangeRate.credits;
+        state.money += bundles * data.exchangeRate.money;
+        feedback = "Converted credits into in-game money.";
+        playSound("positive");
+        maybeDemandText();
+        autosave("exchange");
+      }
+      renderGame();
+      return;
+    }
+    var g = girl(), p = progress(), amount = action.amount;
+    if (action.type === "tribute") {
+      if (!amount || state.money < amount) return;
+      state.money -= amount;
+      p.totalSpent += amount;
+      p.pendingTributes = (p.pendingTributes || 0) + amount;
+      p.talkStreak = 0;
+      p.breakUntil = 0;
+      p.mood = Math.min(100, p.mood + 12);
+      p.leaderboard = (p.leaderboard || []).filter(function(row){ return row.playerName !== state.playerName; });
+      p.leaderboard.push({ playerName: state.playerName, totalSpent: p.totalSpent });
+      scheduleSpend(p);
+      feedback = g.name + " accepted the tribute. Her attention is refilled, but she will spend it later.";
+      playSound("positive");
+      autosave("tribute");
+      renderGame();
+      return;
+    }
+    if (action.type === "demand") {
+      if (!p.pendingDemand || state.money < amount) return;
+      state.money -= amount;
+      p.totalSpent += amount;
+      p.pendingTributes = (p.pendingTributes || 0) + amount;
+      p.pendingDemand = null;
+      p.talkStreak = 0;
+      p.breakUntil = 0;
+      p.mood = Math.min(100, p.mood + 16);
+      scheduleSpend(p);
+      pushNotice(g.name + " accepted", "Attention refilled. She will spend it when she feels like it.");
+      feedback = g.name + " got exactly what she demanded. Her meter is full again.";
+      playSound("positive");
+      autosave("demand-paid");
+      renderGame();
+    }
   }
 
   function leaderboardRows(girlId){
@@ -451,49 +512,17 @@ const script = `
       var amount = Number(target.dataset.tribute);
       var g = girl(), p = progress();
       if (!amount || state.money < amount) return;
-      if (!isConfirm("tribute", amount)) {
-        setConfirm("tribute", amount);
-        feedback = "Tap the " + amount + " tribute again to confirm.";
-        renderGame();
-        return;
-      }
-      clearConfirm();
-      state.money -= amount;
-      p.totalSpent += amount;
-      p.pendingTributes = (p.pendingTributes || 0) + amount;
-      p.talkStreak = 0;
-      p.breakUntil = 0;
-      p.mood = Math.min(100, p.mood + 12);
-      p.leaderboard = (p.leaderboard || []).filter(function(row){ return row.playerName !== state.playerName; });
-      p.leaderboard.push({ playerName: state.playerName, totalSpent: p.totalSpent });
-      scheduleSpend(p);
-      feedback = g.name + " accepted the tribute. Her attention is refilled, but she will spend it later.";
-      playSound("positive");
-      autosave("tribute"); renderGame(); return;
+      setConfirm("tribute", amount);
+      renderGame();
+      return;
     }
     if (target.dataset.demandPay) {
       var amount = Number(target.dataset.demandPay);
       var g = girl(), p = progress();
       if (!p.pendingDemand || state.money < amount) return;
-      if (!isConfirm("demand", amount)) {
-        setConfirm("demand", amount);
-        feedback = "Tap again to confirm " + amount + " for " + g.name + ".";
-        renderGame();
-        return;
-      }
-      clearConfirm();
-      state.money -= amount;
-      p.totalSpent += amount;
-      p.pendingTributes = (p.pendingTributes || 0) + amount;
-      p.pendingDemand = null;
-      p.talkStreak = 0;
-      p.breakUntil = 0;
-      p.mood = Math.min(100, p.mood + 16);
-      scheduleSpend(p);
-      pushNotice(g.name + " accepted", "Attention refilled. She will spend it when she feels like it.");
-      feedback = g.name + " got exactly what she demanded. Her meter is full again.";
-      playSound("positive");
-      autosave("demand-paid"); renderGame(); return;
+      setConfirm("demand", amount);
+      renderGame();
+      return;
     }
     if (target.dataset.guess) {
       var g = girl(), p = progress(), event = p.pendingSpendEvent, reward = event && rewardById(g, event.rewardId);
@@ -532,17 +561,13 @@ const script = `
     if (target.dataset.action === "exchange") {
       var bundles = Math.floor(state.credits / data.exchangeRate.credits);
       if (bundles > 0) {
-        if (!isConfirm("exchange", 0)) {
-          setConfirm("exchange", 0);
-          feedback = "Tap Exchange again to confirm converting credits.";
-          renderGame();
-          return;
-        }
-        clearConfirm();
-        state.credits -= bundles * data.exchangeRate.credits; state.money += bundles * data.exchangeRate.money; feedback = "Converted credits into in-game money."; playSound("positive"); maybeDemandText(); autosave("exchange"); renderGame();
+        setConfirm("exchange", 0);
+        renderGame();
       }
       return;
     }
+    if (target.dataset.action === "confirm-action") { runConfirmedAction(); return; }
+    if (target.dataset.action === "cancel-confirm") { clearConfirm(); renderGame(); return; }
     if (target.dataset.action === "continue") { var cg = girl(), cp = progress(); clearConfirm(); maybeRivalGift(cg, cp); maybeDemandText(); lastReply = ""; lastPlayerLine = ""; feedback = cp.pendingSpendEvent ? cg.name + " changed something. Guess it before chatting." : "Your turn. Choose one reply."; autosave("continue"); renderGame(); return; }
     if (target.dataset.action === "wallet") { playerMenuOpen = true; renderGame(); return; }
     if (target.dataset.action === "contacts") { contactsOpen = true; clearConfirm(); renderGame(); return; }

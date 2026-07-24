@@ -55,7 +55,8 @@ test("server-renders the playable chat game shell", async () => {
   assert.match(html, /phone-toast/);
   assert.match(html, /data-demand-pay/);
   assert.match(html, /data-avatar/);
-  assert.match(html, /Tap again/);
+  assert.match(html, /confirm-popup/);
+  assert.match(html, /confirm-action/);
   assert.match(html, /playSound/);
   assert.match(html, /pointerup/);
   assert.match(html, /gift-reveal/);
