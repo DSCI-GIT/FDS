@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Pink Ledger",
-  description: "A fictional-currency anime chat tribute game prototype.",
+  description: "A soft fictional social world of private profiles, evolving rooms, attentive chat and collectible art.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

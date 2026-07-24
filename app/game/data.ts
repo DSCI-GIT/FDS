@@ -781,7 +781,7 @@ export function createDefaultState(): PlayerState {
     questionnaireComplete: false,
     lastSavedAt: 0,
     lastDemandAt: 0,
-    unlockedGirlIds: ["kiyo"],
+    unlockedGirlIds: ["kiyo", "mimi"],
     inventory: [],
     girls: girls.reduce((accumulator, girl) => {
       accumulator[girl.id] = {
